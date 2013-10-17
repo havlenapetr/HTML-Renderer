@@ -13,7 +13,7 @@ The library is **100% managed code** without any external dependencies, the only
  1. 100% managed code.
  3. No external dependencies.
  3. Single and small dll (250K).
- 4. Supports .NET 2.0 and 3.0, 3.5, 4.0 client profile, 4.5 or higher.
+ 4. Supports .NET and .NETCF 2.0 and 3.0, 3.5 or higher.
  
 **What it is not**
  * 
