@@ -11,7 +11,7 @@
 // "The Art of War"
 
 using System;
-using System.Collections.Generic;
+using System.Collections;
 
 namespace HtmlRenderer.Entities
 {
@@ -32,7 +32,7 @@ namespace HtmlRenderer.Entities
         /// <summary>
         /// collection of all the attributes that are defined on the link element
         /// </summary>
-        private readonly Dictionary<string, string> _attributes;
+        private readonly IDictionary _attributes;
 
         /// <summary>
         /// provide the new source (file path or uri) to load stylesheet from
@@ -52,7 +52,7 @@ namespace HtmlRenderer.Entities
         /// </summary>
         /// <param name="src">the source of the image (file path or uri)</param>
         /// <param name="attributes">collection of all the attributes that are defined on the image element</param>
-        public HtmlStylesheetLoadEventArgs(string src, Dictionary<string, string> attributes)
+        public HtmlStylesheetLoadEventArgs(string src, IDictionary attributes)
         {
             _src = src;
             _attributes = attributes;
@@ -69,7 +69,7 @@ namespace HtmlRenderer.Entities
         /// <summary>
         /// collection of all the attributes that are defined on the image element
         /// </summary>
-        public Dictionary<string, string> Attributes
+        public IDictionary Attributes
         {
             get { return _attributes; }
         }

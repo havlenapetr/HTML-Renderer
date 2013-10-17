@@ -22,7 +22,11 @@ namespace HtmlRenderer.Handlers
     /// <summary>
     /// Contains all the complex paint code to paint different style borders.
     /// </summary>
+#if CF_1_0
+    internal class BordersDrawHandler
+#else
     internal static class BordersDrawHandler
+#endif
     {
         #region Fields and Consts
 
@@ -101,15 +105,18 @@ namespace HtmlRenderer.Handlers
             if (borderPath != null)
             {
                 // rounded border need special path
+#if PC
                 var smooth = g.SmoothingMode;
                 if (box.HtmlContainer != null && !box.HtmlContainer.AvoidGeometryAntialias && box.IsRounded)
                     g.SmoothingMode = SmoothingMode.AntiAlias;
+#endif
 
                 var pen = GetPen(style, color, GetWidth(border, box));
                 using (borderPath)
                     g.DrawPath(pen, borderPath);
-
+#if PC
                 g.SmoothingMode = smooth;
+#endif
             }
             else
             {
@@ -288,13 +295,18 @@ namespace HtmlRenderer.Handlers
                     p.DashStyle = DashStyle.Solid;
                     break;
                 case "dotted":
+#if PC
                     p.DashStyle = DashStyle.Dot;
-
                     break;
+#else
+                    throw new NotSupportedException();
+#endif
                 case "dashed":
                     p.DashStyle = DashStyle.Dash;
+#if PC
                     if (p.Width < 2)
                         p.DashPattern = new[] { 4, 4f }; // better looking
+#endif
                     break;
             }
             return p;

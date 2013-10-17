@@ -17,7 +17,11 @@ namespace HtmlRenderer.Entities
     /// <summary>
     /// String constants to avoid typing errors.
     /// </summary>
+#if CF_1_0
+    internal class CssConstants
+#else
     internal static class CssConstants
+#endif
     {
         public const string Absolute = "absolute";
         public const string Auto = "auto";
@@ -68,7 +72,7 @@ namespace HtmlRenderer.Entities
         public const string Monospace = "monospace";
         public const string None = "none";
         public const string Normal = "normal";
-        public const string NoWrap = "nowrap";
+        public const string Nowrap = "nowrap";
         public const string Oblique = "oblique";
         public const string Outset = "outset";
         public const string Overline = "overline";

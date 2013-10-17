@@ -19,7 +19,11 @@ namespace HtmlRenderer.Utils
     /// <summary>
     /// Utils for fonts and fonts families handling.
     /// </summary>
+#if CF_1_0
+    internal class FontsUtils
+#else
     internal static class FontsUtils
+#endif
     {
         #region Fields and Consts
         
@@ -65,10 +69,12 @@ namespace HtmlRenderer.Utils
             _fontsMapping["monospace"] = "Courier New";
             _fontsMapping["Helvetica"] = "Arial";
 
+#if PC
             foreach (var family in FontFamily.Families)
             {
                 _existingFontFamilies.Add(family.Name, family);
             }
+#endif
         }
 
         /// <summary>
@@ -81,7 +87,11 @@ namespace HtmlRenderer.Utils
         /// </remarks>
         public static float GetAscent(Font font)
         {
+#if PC
             return font.Size * font.FontFamily.GetCellAscent(font.Style) / font.FontFamily.GetEmHeight(font.Style);
+#else
+            return font.Size;
+#endif
         }
 
         /// <summary>
@@ -93,9 +103,13 @@ namespace HtmlRenderer.Utils
         /// <remarks>
         /// Font metrics from http://msdn.microsoft.com/en-us/library/xwf9s90b(VS.71).aspx
         /// </remarks>
-        public static float GetDescent(Font font, IGraphics graphics)
+        public static float GetDescent(Font font)
         {
+#if PC
             return font.Size * font.FontFamily.GetCellDescent(font.Style) / font.FontFamily.GetEmHeight(font.Style);
+#else
+            return 3.0f;
+#endif
         }
 
         /// <summary>
@@ -108,7 +122,11 @@ namespace HtmlRenderer.Utils
         /// </remarks>
         public static float GetLineSpacing(Font font)
         {
+#if PC
             return font.Size * font.FontFamily.GetLineSpacing(font.Style) / font.FontFamily.GetEmHeight(font.Style);
+#else
+            return font.Size;
+#endif
         }
 
         /// <summary>
@@ -121,6 +139,11 @@ namespace HtmlRenderer.Utils
         public static float MeasureStringWidth(IGraphics g, string str, Font font)
         {
             return g.MeasureString(str, font).Width;
+        }
+
+        public static float MeasureStringHeight(IGraphics g, string str, Font font)
+        {
+            return g.MeasureString(str, font).Height;
         }
 
         /// <summary>
@@ -236,7 +259,11 @@ namespace HtmlRenderer.Utils
             float height;
             if (!_fontHeightCache.TryGetValue(font, out height))
             {
+#if PC
                 _fontHeightCache[font] = height = font.GetHeight();
+#else
+                _fontHeightCache[font] = height = GetAscent(font) + GetDescent(font);
+#endif
             }
             return height;
         }

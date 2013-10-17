@@ -3,7 +3,11 @@ namespace HtmlRenderer.Entities
     /// <summary>
     /// Defines HTML strings
     /// </summary>
+#if CF_1_0
+    internal class HtmlConstants
+#else
     internal static class HtmlConstants
+#endif
     {
         public const string A = "a";
 //        public const string ABBR = "ABBR";

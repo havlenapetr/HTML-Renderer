@@ -39,12 +39,16 @@ namespace HtmlRenderer.Dom
         /// <param name="name">the name of the html tag</param>
         /// <param name="attributes">collection of attributes and thier value the html tag has</param>
         /// <param name="text">the text sub-string of the html element</param>
-        public HtmlTag(string name, Dictionary<string, string> attributes = null)
+        public HtmlTag(string name, Dictionary<string, string> attributes)
         {
             ArgChecker.AssertArgNotNullOrEmpty(name, "name");
 
             _name = name;
             _attributes = attributes;
+        }
+
+        public HtmlTag(string name) : this(name, null)
+        {
         }
 
         /// <summary>
@@ -91,13 +95,18 @@ namespace HtmlRenderer.Dom
             return _attributes != null && _attributes.ContainsKey(attribute);
         }
 
+        public string TryGetAttribute(string attribute)
+        {
+            return TryGetAttribute(attribute, null);
+        }
+
         /// <summary>
         /// Get attribute value for given attribute name or null if not exists.
         /// </summary>
         /// <param name="attribute">attribute name to get by</param>
         /// <param name="defaultValue">optional: value to return if attribute is not specified</param>
         /// <returns>attribute value or null if not found</returns>
-        public string TryGetAttribute(string attribute, string defaultValue = null)
+        public string TryGetAttribute(string attribute, string defaultValue)
         {
             return _attributes != null && _attributes.ContainsKey(attribute) ? _attributes[attribute] : defaultValue;
         }

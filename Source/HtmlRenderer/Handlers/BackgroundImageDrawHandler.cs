@@ -20,7 +20,11 @@ namespace HtmlRenderer.Handlers
     /// <summary>
     /// Contains all the paint code to paint different background images.
     /// </summary>
+#if CF_1_0
+    internal class BackgroundImageDrawHandler
+#else
     internal static class BackgroundImageDrawHandler
+#endif
     {
         /// <summary>
         /// Draw the background image of the given box in the given rectangle.<br/>
@@ -44,13 +48,13 @@ namespace HtmlRenderer.Handlers
                               : new Rectangle(imageLoadHandler.Rectangle.Left, imageLoadHandler.Rectangle.Top, imgSize.Width, imgSize.Height);
 
             // initial image destination rectangle
-            var destRect = new Rectangle(location, imgSize);
+            var destRect = new Rectangle(location.X, location.Y, imgSize.Width, imgSize.Height);
 
             // need to clip so repeated image will be cut on rectangle
             var prevClip = g.GetClip();
             var lRectangle = rectangle;
-            lRectangle.Intersect(prevClip);
-            g.SetClip(lRectangle);
+            lRectangle = RenderUtils.RectIntersect(lRectangle, prevClip);
+            g.SetClip(lRectangle, System.Drawing.Drawing2D.CombineMode.Replace);
 
             switch( box.BackgroundRepeat )
             {
@@ -68,7 +72,7 @@ namespace HtmlRenderer.Handlers
                     break;
             }
 
-            g.SetClip(prevClip);
+            g.SetClip(prevClip, System.Drawing.Drawing2D.CombineMode.Replace);
         }
 
 
@@ -123,9 +127,11 @@ namespace HtmlRenderer.Handlers
             while (destRect.X > rectangle.X)
                 destRect.X -= imgSize.Width;
 
-            using (var brush = new TextureBrush(imageLoadHandler.Image, srcRect))
+            using (var brush = new TextureBrush(imageLoadHandler.Image))
             {
+#if PC
                 brush.TranslateTransform(destRect.X, destRect.Y);
+#endif
                 g.FillRectangle(brush, rectangle.X, destRect.Y, rectangle.Width, srcRect.Height);
             }
         }
@@ -139,9 +145,11 @@ namespace HtmlRenderer.Handlers
             while (destRect.Y > rectangle.Y)
                 destRect.Y -= imgSize.Height;
 
-            using (var brush = new TextureBrush(imageLoadHandler.Image, srcRect))
+            using (var brush = new TextureBrush(imageLoadHandler.Image))
             {
+#if PC
                 brush.TranslateTransform(destRect.X, destRect.Y);
+#endif
                 g.FillRectangle(brush, destRect.X, rectangle.Y, srcRect.Width, rectangle.Height);
             }
         }
@@ -157,9 +165,11 @@ namespace HtmlRenderer.Handlers
             while (destRect.Y > rectangle.Y)
                 destRect.Y -= imgSize.Height;
 
-            using (var brush = new TextureBrush(imageLoadHandler.Image, srcRect))
+            using (var brush = new TextureBrush(imageLoadHandler.Image))
             {
+#if PC
                 brush.TranslateTransform(destRect.X, destRect.Y);
+#endif
                 g.FillRectangle(brush, rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
             }
         }

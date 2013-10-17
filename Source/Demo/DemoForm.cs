@@ -123,9 +123,7 @@ namespace HtmlRenderer.Demo
                     {
                         using (StreamReader sreader = new StreamReader(resourceStream, Encoding.Default))
                         {
-                            var html = sreader.ReadToEnd();
-                            html = html.Replace("$$Release$$", _htmlPanel.GetType().Assembly.GetName().Version.ToString());
-                            _samples[name] = html;
+                            _samples[name] = sreader.ReadToEnd();
                         }
 
                         var node = new TreeNode(shortName);
@@ -366,8 +364,6 @@ namespace HtmlRenderer.Demo
                     ul li {margin: .25em}
                     body { font:10pt Tahoma }
 		            pre  { border:solid 1px gray; background-color:#eee; padding:1em }
-                    a:link { text-decoration: none; }
-                    a:hover { text-decoration: underline; }
                     .gray    { color:gray; }
                     .example { background-color:#efefef; corner-radius:5px; padding:0.5em; }
                     .whitehole { background-color:white; corner-radius:10px; padding:15px; }

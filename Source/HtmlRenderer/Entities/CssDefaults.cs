@@ -1,6 +1,10 @@
 namespace HtmlRenderer.Entities
 {
+#if CF_1_0
+    internal class CssDefaults
+#else
     internal static class CssDefaults
+#endif
     {
         /// <summary>
         /// CSS Specification's Default Style Sheet for HTML 4
@@ -67,8 +71,7 @@ namespace HtmlRenderer.Entities
         menu, dd        { margin-left: 40px }
         ol              { list-style-type: decimal }
         ol ul, ul ol,
-        ul ul, ol ol    { margin-top: 0; margin-bottom: 0 }
-        ol ul, ul ul   { list-style-type: circle }
+        ul ul, ol ol    { margin-top: 0; margin-bottom: 0; list-style-type: circle }
         ul ul ul, 
         ol ul ul, 
         ul ol ul        { list-style-type: square }

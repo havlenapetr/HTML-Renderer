@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using HtmlRenderer.Entities;
 using HtmlRenderer.Parse;
+using HtmlRenderer.Utils;
 
 namespace HtmlRenderer.Dom
 {
@@ -50,7 +51,7 @@ namespace HtmlRenderer.Dom
             //If no units, has error
             if (length.Length < 3)
             {
-                float.TryParse(length, out _number);
+                CommonUtils.TryParse(length, out _number);
                 _hasError = true;
                 return;
             }
@@ -96,7 +97,7 @@ namespace HtmlRenderer.Dom
                     return;
             }
 
-            if (!float.TryParse(number,  System.Globalization.NumberStyles.Number, NumberFormatInfo.InvariantInfo, out _number))
+            if (!CommonUtils.TryParse(number,  System.Globalization.NumberStyles.Number, NumberFormatInfo.InvariantInfo, out _number))
             {
                 _hasError = true;
             }

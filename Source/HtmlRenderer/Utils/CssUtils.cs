@@ -21,14 +21,18 @@ namespace HtmlRenderer.Utils
     /// <summary>
     /// Utility method for handling CSS stuff.
     /// </summary>
+#if CF_1_0
+    internal class CssUtils
+#else
     internal static class CssUtils
+#endif
     {
         #region Fields and Consts
 
         /// <summary>
         /// Brush for selection background
         /// </summary>
-        private static readonly Brush _defaultSelectionBackcolor = new SolidBrush(Color.FromArgb(0xa9,0x33, 0x99, 0xFF));
+        private static readonly Brush _defaultSelectionBackcolor = new SolidBrush(Color.Aqua);
 
         /// <summary>
         /// default CSS parsed data singleton

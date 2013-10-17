@@ -15,7 +15,11 @@ using System.Collections.Generic;
 
 namespace HtmlRenderer.Utils
 {
+#if CF_1_0
+    internal class HtmlUtils
+#else
     internal static class HtmlUtils
+#endif
     {
         #region Fields and Consts
 

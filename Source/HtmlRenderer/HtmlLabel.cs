@@ -328,22 +328,16 @@ namespace HtmlRenderer
                             }
                             else if (MinimumSize.Width > 0 && MinimumSize.Width > _htmlContainer.ActualSize.Width)
                             {
-                                // if min size is larger than the actual we need to re-layout so all 100% layouts will be correct
+                                // if min size is larger than the actual we need to re-lyout so all 100% layouts will be correct
                                 _htmlContainer.MaxSize = new SizeF(MinimumSize.Width, 0);
                                 _htmlContainer.PerformLayout(g);
 
                                 Size = Size.Round(_htmlContainer.ActualSize);
                             }
                         }
-                        else if( _autoSizeHight && Height != (int)_htmlContainer.ActualSize.Height )
+                        else if (_autoSizeHight)
                         {
-                            var prevWidth = Width;
-
-                            Height = (int)_htmlContainer.ActualSize.Height;
-
-                            // handle if changing the height of the label affects the desired width and those require re-layout
-                            if( prevWidth != Width )
-                                OnLayout(levent);
+                            Height = (int) _htmlContainer.ActualSize.Height;
                         }
                     }
                 }

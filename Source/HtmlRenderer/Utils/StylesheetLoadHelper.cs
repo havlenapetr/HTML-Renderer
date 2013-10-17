@@ -11,7 +11,7 @@
 // "The Art of War"
 
 using System;
-using System.Collections.Generic;
+using System.Collections;
 using System.IO;
 using System.Net;
 using HtmlRenderer.Entities;
@@ -21,7 +21,11 @@ namespace HtmlRenderer.Utils
     /// <summary>
     /// Helper for loading a stylesheet data.
     /// </summary>
+#if CF_1_0
+    internal class StylesheetLoadHelper
+#else
     internal static class StylesheetLoadHelper
+#endif
     {
         /// <summary>
         /// 
@@ -29,7 +33,7 @@ namespace HtmlRenderer.Utils
         /// <param name="htmlContainer">the container of the html to handle load stylesheet for</param>
         /// <param name="src">the source of the element to load the stylesheet by</param>
         /// <param name="attributes">the attributes of the link element</param>
-        public static string LoadStylesheet(HtmlContainer htmlContainer, string src, Dictionary<string, string> attributes)
+        public static string LoadStylesheet(HtmlContainer htmlContainer, string src, IDictionary attributes)
         {
             ArgChecker.AssertArgNotNull(htmlContainer, "htmlContainer");
 
@@ -72,7 +76,11 @@ namespace HtmlRenderer.Utils
             var uri = CommonUtils.TryGetUri(src);
             if (uri != null && uri.Scheme != "file")
             {
+#if PC
                 return LoadStylesheetFromUri(uri);
+#else
+                throw new NotSupportedException();
+#endif
             }
             else
             {
@@ -80,6 +88,7 @@ namespace HtmlRenderer.Utils
             }
         }
 
+#if PC
         /// <summary>
         /// Load the stylesheet from uri by downloading the string.
         /// </summary>
@@ -92,6 +101,7 @@ namespace HtmlRenderer.Utils
                 return client.DownloadString(uri);
             }
         }
+#endif
 
         /// <summary>
         /// Load the stylesheet from local file by given path.

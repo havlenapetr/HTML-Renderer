@@ -14,6 +14,8 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 
+using HtmlRenderer.Utils;
+
 namespace HtmlRenderer.Dom
 {
     /// <summary>
@@ -171,12 +173,12 @@ namespace HtmlRenderer.Dom
 
             if (!Rectangles.ContainsKey(box))
             {
-                Rectangles.Add(box, RectangleF.FromLTRB(x, y, r, b));
+                Rectangles.Add(box, RenderUtils.RectFromLTRB(x, y, r, b));
             }
             else
             {
                 RectangleF f = Rectangles[box];
-                Rectangles[box] = RectangleF.FromLTRB(
+                Rectangles[box] = RenderUtils.RectFromLTRB(
                     Math.Min(f.X, x), Math.Min(f.Y, y),
                     Math.Max(f.Right, r), Math.Max(f.Bottom, b));
             }
@@ -208,8 +210,7 @@ namespace HtmlRenderer.Dom
             {
                 if (float.IsInfinity(Rectangles[b].Width)) 
                     continue;
-                g.FillRectangle(new SolidBrush(Color.FromArgb(50, Color.Black)),
-                    Rectangle.Round(Rectangles[b]));
+                g.FillRectangle(Brushes.Black, Rectangle.Round(Rectangles[b]));
                 g.DrawRectangle(Pens.Red, Rectangle.Round(Rectangles[b]));
             }
         }
@@ -223,9 +224,7 @@ namespace HtmlRenderer.Dom
         public float GetBaseLineHeight(CssBox b, Graphics g)
         {
             Font f = b.ActualFont;
-            FontFamily ff = f.FontFamily;
-            FontStyle s = f.Style;
-            return f.GetHeight(g) * ff.GetCellAscent(s) / ff.GetLineSpacing(s);
+            return HtmlRenderer.Utils.FontsUtils.GetFontHeight(f);
         }
 
         /// <summary>

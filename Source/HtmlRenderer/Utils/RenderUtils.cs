@@ -15,14 +15,52 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using HtmlRenderer.Dom;
 using HtmlRenderer.Entities;
+#if PC
 using HtmlRenderer.Properties;
+#else
+using System.IO;
+using System.Reflection;
+#endif
 
 namespace HtmlRenderer.Utils
 {
+
+#if !PC
+#if CF_1_0
+    internal class Pens
+#else
+    internal static class Pens
+#endif
+    {
+        public static readonly Pen LightGray = new Pen(System.Drawing.Color.LightGray);
+        public static readonly Pen Red = new Pen(System.Drawing.Color.Red);
+        public static readonly Pen Azure = new Pen(System.Drawing.Color.Azure);
+        public static readonly Pen Black = new Pen(System.Drawing.Color.Black);
+    }
+
+#if CF_1_0
+    internal class Brushes
+#else
+    internal static class Brushes
+#endif
+    {
+        public static readonly Brush White = new SolidBrush(Color.White);
+        public static readonly Brush Black = new SolidBrush(Color.Black);
+        public static readonly Brush Azure = new SolidBrush(Color.Azure);
+        public static readonly Brush Gray = new SolidBrush(Color.Gray);
+        public static readonly Brush LightGray = new SolidBrush(Color.LightGray);
+        public static readonly SolidBrush Custom = new SolidBrush(Color.Empty);
+    }
+#endif
+
     /// <summary>
     /// Provides some drawing functionallity
     /// </summary>
+#if CF_1_0
+    internal class RenderUtils
+#else
     internal static class RenderUtils
+#endif
     {
         #region Fields and Consts
 
@@ -66,6 +104,7 @@ namespace HtmlRenderer.Utils
         /// <returns>brush instance</returns>
         public static Brush GetSolidBrush(Color color)
         {
+#if PC
             if (color == Color.White)
             {
                 return Brushes.White;
@@ -79,6 +118,7 @@ namespace HtmlRenderer.Utils
                 return Brushes.Transparent;
             }
             else
+#endif
             {
                 Brush brush;
                 if (!_brushesCache.TryGetValue(color, out brush))
@@ -100,12 +140,8 @@ namespace HtmlRenderer.Utils
             Pen pen;
             if (!_penCache.TryGetValue(color, out pen))
             {
-                pen = new Pen(GetSolidBrush(color));
+                pen = new Pen(color);
                 _penCache[color] = pen;
-            }
-            else
-            {
-                pen.Width = 1;                
             }
             return pen;
         }
@@ -129,9 +165,9 @@ namespace HtmlRenderer.Utils
                     var rect = box.ContainingBlock.ClientRectangle;
                     rect.X -= 2; // atodo: find better way to fix it
                     rect.Width += 2;
-                    rect.Offset(box.HtmlContainer.ScrollOffset);
-                    rect.Intersect(prevClip);
-                    g.SetClip(rect);
+                    rect = RenderUtils.RectOffset(rect, box.HtmlContainer.ScrollOffset);
+                    rect = RenderUtils.RectIntersect(rect, prevClip);
+                    g.SetClip(rect, System.Drawing.Drawing2D.CombineMode.Replace);
                     return prevClip;
                 }
                 else
@@ -154,7 +190,7 @@ namespace HtmlRenderer.Utils
         {
             if (prevClip != RectangleF.Empty)
             {
-                g.SetClip(prevClip);
+                g.SetClip(prevClip, System.Drawing.Drawing2D.CombineMode.Replace);
             }
         }
         
@@ -167,7 +203,10 @@ namespace HtmlRenderer.Utils
         {
             g.DrawRectangle(Pens.LightGray, r.Left + 3, r.Top + 3, 13, 14);
             var image = GetLoadImage();
-            g.DrawImage(image, new RectangleF(r.Left + 4, r.Top + 4, image.Width, image.Height));
+            if (image != null)
+            {
+                g.DrawImage(image, new RectangleF(r.Left + 4, r.Top + 4, image.Width, image.Height));
+            }
         }
 
         /// <summary>
@@ -179,7 +218,65 @@ namespace HtmlRenderer.Utils
         {
             g.DrawRectangle(Pens.LightGray, r.Left + 2, r.Top + 2, 15, 15);
             var image = GetErrorImage();
-            g.DrawImage(image, new RectangleF(r.Left + 3, r.Top + 3, image.Width, image.Height));
+            if (image != null)
+            {
+                g.DrawImage(image, new RectangleF(r.Left + 3, r.Top + 3, image.Width, image.Height));
+            }
+        }
+
+        public static RectangleF RectOffset(RectangleF rect, PointF offset)
+        {
+            return RectOffset(rect, offset.X, offset.Y);
+        }
+
+        public static RectangleF RectOffset(RectangleF rect, float x, float y)
+        {
+            rect.X += x;
+            rect.Y += y;
+            return rect;
+        }
+
+        public static Rectangle ToRect(RectangleF rect)
+        {
+            return new Rectangle((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
+        }
+
+        public static RectangleF RectIntersect(RectangleF rect1, RectangleF rect2)
+        {
+            return RectIntersect(rect1, rect2.X, rect2.Y, rect2.Width, rect2.Height);
+        }
+
+        public static RectangleF RectIntersect(RectangleF rect, float x, float y, float width, float height)
+        {
+            Rectangle r1 = ToRect(rect);
+            Rectangle r2 = new Rectangle(
+                (int)System.Math.Round(x),
+                (int)System.Math.Round(y),
+                (int)System.Math.Round(width),
+                (int)System.Math.Round(height));
+            r1.Intersect(r2);
+            return r1;
+        }
+
+        public static bool RectContains(RectangleF rect, Point p)
+        {
+            return RectContains(rect, p.X, p.Y);
+        }
+
+        public static bool RectContains(RectangleF rect, float x, float y)
+        {
+            return ((x >= rect.Left) && (x < rect.Right) &&
+                (y >= rect.Top) && (y < rect.Bottom));
+        }
+
+        public static Point PointRound(PointF point)
+        {
+            return new Point((int)point.X, (int)point.Y);
+        }
+
+        public static RectangleF RectFromLTRB(float left, float top, float right, float bottom)
+        {
+            return new RectangleF(left, top, right - left, bottom - top);
         }
 
         /// <summary>
@@ -212,7 +309,7 @@ namespace HtmlRenderer.Utils
             if( neRadius > 0f )
             {
                 path.AddArc(
-                    RectangleF.FromLTRB(rect.Right - neRadius, rect.Top, rect.Right, rect.Top + neRadius),
+                    RectFromLTRB(rect.Right - neRadius, rect.Top, rect.Right, rect.Top + neRadius),
                     -90, 90);
             }
 
@@ -225,7 +322,7 @@ namespace HtmlRenderer.Utils
             if( seRadius > 0f )
             {
                 path.AddArc(
-                    RectangleF.FromLTRB(rect.Right - seRadius, rect.Bottom - seRadius, rect.Right, rect.Bottom),
+                    RectFromLTRB(rect.Right - seRadius, rect.Bottom - seRadius, rect.Right, rect.Bottom),
                     0, 90);
             }
 
@@ -236,7 +333,7 @@ namespace HtmlRenderer.Utils
             if( swRadius > 0f )
             {
                 path.AddArc(
-                    RectangleF.FromLTRB(rect.Left, rect.Bottom - swRadius, rect.Left + swRadius, rect.Bottom),
+                    RectFromLTRB(rect.Left, rect.Bottom - swRadius, rect.Left + swRadius, rect.Bottom),
                     90, 90);
             }
 
@@ -249,7 +346,7 @@ namespace HtmlRenderer.Utils
             if( nwRadius > 0f )
             {
                 path.AddArc(
-                    RectangleF.FromLTRB(rect.Left, rect.Top, rect.Left + nwRadius, rect.Top + nwRadius),
+                    RectFromLTRB(rect.Left, rect.Top, rect.Left + nwRadius, rect.Top + nwRadius),
                     180, 90);
             }
 
@@ -261,14 +358,33 @@ namespace HtmlRenderer.Utils
 
         #region Private methods
 
+#if !PC
+        private static Bitmap LoadBitmapResource(string pictName)
+        {
+            string filename = "Images." + pictName + ".png";
+            Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(filename);
+
+            if (stream == null)
+            {
+                return null;
+                //throw new IOException("Picture not found in embeded resources!");
+            }
+            return new Bitmap(stream);
+        }
+#endif
+
         /// <summary>
         /// Get singleton instance of load image.
         /// </summary>
         /// <returns>image instance</returns>
         private static Image GetLoadImage()
         {
-            if( _loadImage == null )
+            if (_loadImage == null)
+#if PC
                 _loadImage = Resources.LoadImage;
+#else
+                _loadImage = LoadBitmapResource("LoadImage");
+#endif
             return _loadImage;
         }
 
@@ -279,7 +395,11 @@ namespace HtmlRenderer.Utils
         private static Image GetErrorImage()
         {
             if( _errorImage == null )
+#if PC
                 _errorImage = Resources.ErrorImage;
+#else
+                _errorImage = LoadBitmapResource("ErrorImage");
+#endif
             return _errorImage;
         }
 

@@ -42,11 +42,6 @@ namespace HtmlRenderer.Entities
         /// </summary>
         private readonly List<CssBlockSelectorItem> _selectors;
 
-        /// <summary>
-        /// is the css block has :hover pseudo-class
-        /// </summary>
-        private readonly bool _hover;
-
         #endregion
 
 
@@ -56,8 +51,7 @@ namespace HtmlRenderer.Entities
         /// <param name="class">the name of the css class of the block</param>
         /// <param name="properties">the CSS block properties and values</param>
         /// <param name="selectors">optional: additional selectors to used in hierarchy</param>
-        /// <param name="hover">optional: is the css block has :hover pseudo-class</param>
-        public CssBlock(string @class, Dictionary<string, string> properties, List<CssBlockSelectorItem> selectors = null, bool hover = false)
+        public CssBlock(string @class, Dictionary<string, string> properties, List<CssBlockSelectorItem> selectors)
         {
             ArgChecker.AssertArgNotNullOrEmpty(@class, "@class");
             ArgChecker.AssertArgNotNull(properties, "properties");
@@ -65,7 +59,6 @@ namespace HtmlRenderer.Entities
             _class = @class;
             _selectors = selectors;
             _properties = properties;
-            _hover = hover;
         }
 
         /// <summary>
@@ -90,14 +83,6 @@ namespace HtmlRenderer.Entities
         public IDictionary<string,string> Properties
         {
             get { return _properties; }
-        }
-
-        /// <summary>
-        /// is the css block has :hover pseudo-class
-        /// </summary>
-        public bool Hover
-        {
-            get { return _hover; }
         }
 
         /// <summary>
@@ -166,9 +151,7 @@ namespace HtmlRenderer.Entities
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-
-            if( other.Hover != Hover )
-                return false;
+            
             if (other._selectors == null && _selectors != null)
                 return false;
             if (other._selectors != null && _selectors == null)

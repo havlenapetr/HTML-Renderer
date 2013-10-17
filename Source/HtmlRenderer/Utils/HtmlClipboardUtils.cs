@@ -13,7 +13,11 @@ namespace HtmlRenderer.Utils
     /// Helper class to decode HTML from the clipboard.
     /// See http://blogs.msdn.com/jmstall/archive/2007/01/21/html-clipboard.aspx for details.
     /// </summary>
+#if CF_1_0
+    internal class HtmlClipboardUtils
+#else
     internal static class HtmlClipboardUtils
+#endif
     {
         #region Fields and Consts
 
@@ -45,7 +49,9 @@ EndSelection:<<<<<<<3
         {
             var data = GetHtmlData(html);
             var dataObject = new DataObject();
+#if PC
             dataObject.SetData(DataFormats.Html, data);
+#endif
             dataObject.SetData(DataFormats.Text, plainText);
             return dataObject;
         }

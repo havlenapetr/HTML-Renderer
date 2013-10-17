@@ -31,10 +31,12 @@ namespace HtmlRenderer.Handlers
         /// </summary>
         private readonly CssBox _root;
 
+#if PC
         /// <summary>
         /// handler for showing context menu on right click
         /// </summary>
         private readonly ContextMenuHandler _contextMenuHandler;
+#endif
 
         /// <summary>
         /// the mouse location when selection started used to ignore small selections
@@ -120,7 +122,9 @@ namespace HtmlRenderer.Handlers
             ArgChecker.AssertArgNotNull(root, "root");
 
             _root = root;
+#if PC
             _contextMenuHandler = new ContextMenuHandler(this, root.HtmlContainer);
+#endif
         }
 
         /// <summary>
@@ -188,10 +192,12 @@ namespace HtmlRenderer.Handlers
                 {
                     var rect = DomUtils.GetCssBoxWord(_root, loc);
                     var link = DomUtils.GetLinkBox(_root, loc);
+#if PC
                     if(_root.HtmlContainer.IsContextMenuEnabled)
                     {
                         _contextMenuHandler.ShowContextMenu(parent, rect, link);
                     }
+#endif
                     clear = rect == null || !rect.Selected;
                 }
             }
@@ -254,18 +260,24 @@ namespace HtmlRenderer.Handlers
                 if (link != null)
                 {
                     _cursorChanged = true;
+#if PC
                     parent.Cursor = Cursors.Hand;
+#endif
                 }
                 else if (_root.HtmlContainer.IsSelectionEnabled)
                 {
                     var word = DomUtils.GetCssBoxWord(_root, loc);
                     _cursorChanged = word != null && !word.IsImage && !( word.Selected && ( word.SelectedStartIndex < 0 || word.Left + word.SelectedStartOffset <= loc.X ) && ( word.SelectedEndOffset < 0 || word.Left + word.SelectedEndOffset >= loc.X ) );
+#if PC
                     parent.Cursor = _cursorChanged ? Cursors.IBeam : Cursors.Default;
+#endif
                 }
+#if PC
                 else if(_cursorChanged)
                 {
                     parent.Cursor = Cursors.Default;                    
                 }
+#endif
             }
         }
         
@@ -278,7 +290,9 @@ namespace HtmlRenderer.Handlers
             if(_cursorChanged)
             {
                 _cursorChanged = false;
+#if PC
                 parent.Cursor = Cursors.Default;
+#endif
             }
         }
 
@@ -356,7 +370,9 @@ namespace HtmlRenderer.Handlers
         /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
+#if PC
             _contextMenuHandler.Dispose();
+#endif
         }
 
 
@@ -427,7 +443,9 @@ namespace HtmlRenderer.Handlers
                     }
 
                     _cursorChanged = true;
+#if PC
                     control.Cursor = Cursors.IBeam;
+#endif
                     control.Invalidate();
                 }
             }
@@ -481,7 +499,9 @@ namespace HtmlRenderer.Handlers
                 var plainText = DomUtils.GetSelectedPlainText(_root);
                 _dragDropData = HtmlClipboardUtils.GetDataObject(html, plainText);
             }
+#if PC
             control.DoDragDrop(_dragDropData, DragDropEffects.Copy);
+#endif
         }
 
         /// <summary>

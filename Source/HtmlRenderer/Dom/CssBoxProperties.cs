@@ -142,9 +142,9 @@ namespace HtmlRenderer.Dom
         private float _actualTextIndent = float.NaN;
         private float _actualBorderSpacingHorizontal = float.NaN;
         private float _actualBorderSpacingVertical = float.NaN;
-        private float _fontAscent = float.NaN;
+        /*private float _fontAscent = float.NaN;
         private float _fontDescent = float.NaN;
-        private float _fontLineSpacing = float.NaN;
+        private float _fontLineSpacing = float.NaN;*/
         private Color _actualBackgroundGradient = System.Drawing.Color.Empty;
         private Color _actualBorderTopColor = System.Drawing.Color.Empty;
         private Color _actualBorderLeftColor = System.Drawing.Color.Empty;
@@ -489,7 +489,7 @@ namespace HtmlRenderer.Dom
         public string LineHeight
         {
             get { return _lineHeight; }
-            set { _lineHeight = string.Format(NumberFormatInfo.InvariantInfo, "{0}px", CssValueParser.ParseLength(value, Size.Height, this, CssConstants.Em)); }
+            set { _lineHeight = string.Format(NumberFormatInfo.InvariantInfo, "{0}px", CssValueParser.ParseLength(value, Size.Height, this)); }
         }
 
         public string VerticalAlign
@@ -564,7 +564,11 @@ namespace HtmlRenderer.Dom
                     }
                     else if (len.Unit == CssUnit.Ems && GetParent() != null)
                     {
+#if PC
                         computedValue = len.ConvertEmToPoints(GetParent().ActualFont.SizeInPoints).ToString();
+#else
+                        computedValue = len.ConvertEmToPoints(GetParent().ActualFont.Size).ToString();
+#endif
                     }
                     else
                     {
@@ -654,7 +658,7 @@ namespace HtmlRenderer.Dom
         /// </summary>
         public RectangleF Bounds
         {
-            get { return new RectangleF(Location, Size); }
+            get { return new RectangleF(Location.X, Location.Y, Size.Width, Size.Height); }
         }
 
         /// <summary>
@@ -721,7 +725,7 @@ namespace HtmlRenderer.Dom
         /// </summary>
         public RectangleF ClientRectangle
         {
-            get { return RectangleF.FromLTRB(ClientLeft, ClientTop, ClientRight, ClientBottom); }
+            get { return new RectangleF(ClientLeft, ClientTop, ClientRight, ClientBottom); }
         }
 
         /// <summary>
@@ -1240,7 +1244,7 @@ namespace HtmlRenderer.Dom
                         case CssConstants.Larger:
                             fsize = parentSize + 2; break;
                         default:
-                            fsize = CssValueParser.ParseLength(FontSize, parentSize, parentSize, null, true, true);
+                            fsize = CssValueParser.ParseLength(FontSize, parentSize, parentSize, true, true);
                             break;
                     }
 
@@ -1376,7 +1380,7 @@ namespace HtmlRenderer.Dom
         /// <param name="style">optional: the style to set</param>
         /// <param name="width">optional: the width to set</param>
         /// <param name="color">optional: the color to set</param>
-        protected void SetAllBorders(string style = null, string width = null, string color = null)
+        protected void SetAllBorders(string style, string width, string color)
         {
             if (style != null)
                 BorderLeftStyle = BorderTopStyle = BorderRightStyle = BorderBottomStyle = style;
@@ -1431,7 +1435,6 @@ namespace HtmlRenderer.Dom
                 _listStyle = p._listStyle;
                 _lineHeight = p._lineHeight;
                 _wordBreak = p.WordBreak;
-                _direction = p._direction;
 
                 if (everything)
                 {
@@ -1459,6 +1462,7 @@ namespace HtmlRenderer.Dom
                     _cornerSERadius = p._cornerSERadius;
                     _cornerSWRadius = p._cornerSWRadius;
                     _cornerRadius = p._cornerRadius;
+                    _direction = p._direction;
                     _display = p._display;
                     _float = p._float;
                     _height = p._height;

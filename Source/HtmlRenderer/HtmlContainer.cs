@@ -11,8 +11,9 @@
 // "The Art of War"
 
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Diagnostics;
+using System.Threading;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -79,11 +80,6 @@ namespace HtmlRenderer
         private CssBox _root;
 
         /// <summary>
-        /// dictionary of all css boxes that have ":hover" selector on them
-        /// </summary>
-        private List<Tupler<CssBox,CssBlock>> _hoverBoxes;
-
-        /// <summary>
         /// Handler for text selection in the html. 
         /// </summary>
         private SelectionHandler _selectionHandler;
@@ -146,6 +142,8 @@ namespace HtmlRenderer
         /// </summary>
         private SizeF _actualSize;
 
+        private InterlockedMutex _lock;
+
         #endregion
 
 
@@ -153,7 +151,7 @@ namespace HtmlRenderer
         /// Raised when the user clicks on a link in the html.<br/>
         /// Allows canceling the execution of the link.
         /// </summary>
-        public event EventHandler<HtmlLinkClickedEventArgs> LinkClicked;
+        public event EventHandler LinkClicked;
 
         /// <summary>
         /// Raised when html renderer requires refresh of the control hosting (invalidation and re-layout).
@@ -161,13 +159,13 @@ namespace HtmlRenderer
         /// <remarks>
         /// There is no guarantee that the event will be raised on the main thread, it can be raised on thread-pool thread.
         /// </remarks>
-        public event EventHandler<HtmlRefreshEventArgs> Refresh;
+        public event EventHandler Refresh;
 
         /// <summary>
         /// Raised when Html Renderer request scroll to specific location.<br/>
         /// This can occur on document anchor click.
         /// </summary>
-        public event EventHandler<HtmlScrollEventArgs> ScrollChange;
+        public event EventHandler ScrollChange;
 
         /// <summary>
         /// Raised when an error occurred during html rendering.<br/>
@@ -175,20 +173,20 @@ namespace HtmlRenderer
         /// <remarks>
         /// There is no guarantee that the event will be raised on the main thread, it can be raised on thread-pool thread.
         /// </remarks>
-        public event EventHandler<HtmlRenderErrorEventArgs> RenderError;
+        public event EventHandler RenderError;
 
         /// <summary>
         /// Raised when a stylesheet is about to be loaded by file path or URI by link element.<br/>
         /// This event allows to provide the stylesheet manually or provide new source (file or Uri) to load from.<br/>
         /// If no alternative data is provided the original source will be used.<br/>
         /// </summary>
-        public event EventHandler<HtmlStylesheetLoadEventArgs> StylesheetLoad;
+        public event EventHandler StylesheetLoad;
 
         /// <summary>
         /// Raised when an image is about to be loaded by file path or URI.<br/>
         /// This event allows to provide the image manually, if not handled the image will be loaded from file or download from URI.
         /// </summary>
-        public event EventHandler<HtmlImageLoadEventArgs> ImageLoad;
+        public event EventHandler ImageLoad;
 
         /// <summary>
         /// the parsed stylesheet data used for handling the html
@@ -259,6 +257,24 @@ namespace HtmlRenderer
             set { _scrollOffset = value; }
         }
 
+        public PointF ScrollOffsetLocked
+        {
+            get
+            {
+                using (AutoLock l = new AutoLock(_lock))
+                {
+                    return _scrollOffset;
+                }
+            }
+            set
+            {
+                using (AutoLock l = new AutoLock(_lock))
+                {
+                    _scrollOffset = value;
+                }
+            }
+        }
+
         /// <summary>
         /// The top-left most location of the rendered html.<br/>
         /// This will offset the top-left corner of the rendered html.
@@ -282,6 +298,17 @@ namespace HtmlRenderer
             set { _maxSize = value; }
         }
 
+        public SizeF MaxSizeLocked
+        {
+            set
+            {
+                using (AutoLock l = new AutoLock(_lock))
+                {
+                    _maxSize = value;
+                }
+            }
+        }
+
         /// <summary>
         /// The actual size of the rendered html (after layout)
         /// </summary>
@@ -289,6 +316,17 @@ namespace HtmlRenderer
         {
             get { return _actualSize; }
             internal set { _actualSize = value; }
+        }
+
+        public SizeF ActualSizeLocked
+        {
+            get
+            {
+                using (AutoLock l = new AutoLock(_lock))
+                {
+                    return _actualSize;
+                }
+            }
         }
 
         /// <summary>
@@ -317,15 +355,25 @@ namespace HtmlRenderer
             set { _selectionBackColor = value; }
         }
 
+        public HtmlContainer()
+        {
+#if PROFILE
+            String logFile = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.
+                GetExecutingAssembly().GetModules()[0].FullyQualifiedName), "profile.txt");
+            ODP.Diagnostics.LogFn.AddListener(new ODP.Diagnostics.
+                LogFileTraceListener(logFile, 2000000));
+#endif
+            _lock = new InterlockedMutex("HtmlContainer.Mutex");
+        }
+
         /// <summary>
         /// Init with optional document and stylesheet.
         /// </summary>
         /// <param name="htmlSource">the html to init with, init empty if not given</param>
         /// <param name="baseCssData">optional: the stylesheet to init with, init default if not given</param>
-        public void SetHtml(string htmlSource, CssData baseCssData = null)
+        public void SetHtml(string htmlSource, CssData baseCssData)
         {
-            
-            if(_root != null)
+            if (_root != null)
             {
                 _root.Dispose();
                 _root = null;
@@ -346,16 +394,21 @@ namespace HtmlRenderer
             }
         }
 
+        public string GetHtml()
+        {
+            return GetHtml(HtmlGenerationStyle.Inline);
+        }
+
         /// <summary>
         /// Get html from the current DOM tree with style if requested.
         /// </summary>
         /// <param name="styleGen">Optional: controls the way styles are generated when html is generated (default: <see cref="HtmlGenerationStyle.Inline"/>)</param>
         /// <returns>generated html</returns>
-        public string GetHtml(HtmlGenerationStyle styleGen = HtmlGenerationStyle.Inline)
+        private string GetHtml(HtmlGenerationStyle styleGen)
         {
             return DomUtils.GenerateHtml(_root, styleGen);
         }
-        
+
         /// <summary>
         /// Get attribute value of element at the given x,y location by given key.<br/>
         /// If more than one element exist with the attribute at the location the inner most is returned.
@@ -364,12 +417,12 @@ namespace HtmlRenderer
         /// <param name="attribute">the attribute key to get value by</param>
         /// <returns>found attribute value or null if not found</returns>
         public string GetAttributeAt(Point location, string attribute)
-         {
+        {
             ArgChecker.AssertArgNotNullOrEmpty(attribute, "attribute");
 
-             var cssBox = DomUtils.GetCssBox(_root, OffsetByScroll(location));
-             return cssBox != null ? DomUtils.GetAttribute(cssBox, attribute) : null;
-         }
+            var cssBox = DomUtils.GetCssBox(_root, OffsetByScroll(location));
+            return cssBox != null ? DomUtils.GetAttribute(cssBox, attribute) : null;
+        }
 
         /// <summary>
         /// Get css link href at the given x,y location.
@@ -382,63 +435,120 @@ namespace HtmlRenderer
             return link != null ? link.HrefLink : null;
         }
 
+        public RectangleF[] FindPlainText(string text)
+        {
+            CssRect[] cssRects = DomUtils.SelectPlainText(_root, _selectionHandler, text);
+            RectangleF[] rects = new RectangleF[cssRects.Length];
+            for (int i = 0; i < rects.Length; i++)
+            {
+                rects[i] = new RectangleF(
+                    cssRects[i].Rectangle.X,
+                    cssRects[i].Rectangle.Y,
+                    cssRects[i].Rectangle.Width,
+                    cssRects[i].Rectangle.Height);
+            }
+            return rects;
+        }
+
+        public void PerformLayoutLocked(Graphics g, bool profile)
+        {
+            using (AutoLock l = new AutoLock(_lock))
+            {
+                PerformLayout(g, profile);
+            }
+        }
+
+        public void PerformLayout(Graphics g)
+        {
+            PerformLayout(g, false);
+        }
+
         /// <summary>
         /// Measures the bounds of box and children, recursively.
         /// </summary>
         /// <param name="g">Device context to draw</param>
-        public void PerformLayout(Graphics g)
+#if PROFILE
+        public void PerformLayout(Graphics g, bool profile)
+#else
+        private void PerformLayout(Graphics g, bool profile)
+#endif
         {
             ArgChecker.AssertArgNotNull(g, "g");
 
             if (_root != null)
             {
-                using (var ig = new WinGraphics(g))
+                using (ArgChecker.Profile("HtmlContainer.PerformLayout", profile))
                 {
-                    _actualSize = SizeF.Empty;
-
-                    // if width is not restricted we set it to large value to get the actual later
-                    _root.Size = new SizeF(_maxSize.Width > 0 ? _maxSize.Width : 99999, 0);
-                    _root.Location = _location;
-                    _root.PerformLayout(ig);
-
-                    if (_maxSize.Width <= 0.1)
+                    using (var ig = new WinGraphics(g))
                     {
-                        // in case the width is not restricted we need to double layout, first will find the width so second can layout by it (center alignment)
-                        _root.Size = new SizeF((int)Math.Ceiling(_actualSize.Width), 0);
                         _actualSize = SizeF.Empty;
-                        _root.PerformLayout(ig);
+
+                        // if width is not restricted we set it to large value to get the actual later
+                        _root.Size = new SizeF(_maxSize.Width > 0 ? _maxSize.Width : 99999, 0);
+                        _root.Location = _location;
+                        _root.PerformLayout(ig, profile);
+
+                        if (_maxSize.Width <= 0.1)
+                        {
+                            // in case the width is not restricted we need to double layout, first will find the width so second can layout by it (center alignment)
+                            _root.Size = new SizeF((int)Math.Ceiling(_actualSize.Width), 0);
+                            _actualSize = SizeF.Empty;
+                            _root.PerformLayout(ig, profile);
+                        }
                     }
                 }
             }
+        }
+
+        public void PerformPaintLocked(Graphics g, bool profile)
+        {
+            using (AutoLock l = new AutoLock(_lock))
+            {
+                PerformPaint(g, profile);
+            }
+        }
+
+        public void PerformPaint(Graphics g)
+        {
+            PerformPaint(g, false);
         }
 
         /// <summary>
         /// Render the html using the given device.
         /// </summary>
         /// <param name="g">the device to use to render</param>
-        public void PerformPaint(Graphics g)
+#if PROFILE
+        public void PerformPaint(Graphics g, bool profile)
+#else
+        private void PerformPaint(Graphics g, bool profile)
+#endif
         {
             ArgChecker.AssertArgNotNull(g, "g");
 
-            Region prevClip = null;
-            if (MaxSize.Height > 0)
-            {
-                prevClip = g.Clip;
-                g.SetClip(new RectangleF(_location, _maxSize));
-            }
-
-            if (_root != null)
+            using (ArgChecker.Profile("HtmlContainer.PerformPaint", profile))
             {
                 using (var ig = new WinGraphics(g))
                 {
-                    _root.Paint(ig);
+                    RectangleF prevClip = RectangleF.Empty;
+                    if (_maxSize.Height > 0)
+                    {
+                        prevClip = ig.GetClip();
+                        ig.SetClip(new RectangleF(_location.X, _location.Y, _maxSize.Width, _maxSize.Height), CombineMode.Replace);
+                    }
+
+                    if (_root != null)
+                    {
+                        _root.Paint(ig, profile);
+                    }
+
+                    if (prevClip != RectangleF.Empty)
+                    {
+                        ig.SetClip(prevClip, CombineMode.Replace);
+                    }
                 }
             }
 
-            if (prevClip != null)
-            {
-                g.SetClip(prevClip, CombineMode.Replace);
-            }
+            ArgChecker.ProfileDump();
         }
 
         /// <summary>
@@ -454,7 +564,8 @@ namespace HtmlRenderer
             try
             {
                 if (_selectionHandler != null)
-                    _selectionHandler.HandleMouseDown(parent, OffsetByScroll(e.Location), IsMouseInContainer(e.Location));
+                    _selectionHandler.HandleMouseDown(parent, OffsetByScroll(new Point(e.X, e.Y)),
+                        IsMouseInContainer(new Point(e.X, e.Y)));
             }
             catch (Exception ex)
             {
@@ -474,16 +585,16 @@ namespace HtmlRenderer
 
             try
             {
-                if (_selectionHandler != null && IsMouseInContainer(e.Location))
+                if (_selectionHandler != null && IsMouseInContainer(new Point(e.X, e.Y)))
                 {
                     var ignore = _selectionHandler.HandleMouseUp(parent, e.Button);
                     if (!ignore && (e.Button & MouseButtons.Left) != 0)
                     {
-                        var loc = OffsetByScroll(e.Location);
+                        var loc = OffsetByScroll(new Point(e.X, e.Y));
                         var link = DomUtils.GetLinkBox(_root, loc);
                         if (link != null)
                         {
-                            HandleLinkClicked(parent, e, link);
+                            HandleLinkClicked(link);
                         }
                     }
                 }
@@ -506,8 +617,8 @@ namespace HtmlRenderer
 
             try
             {
-                if (_selectionHandler != null && IsMouseInContainer(e.Location))
-                    _selectionHandler.SelectWord(parent, OffsetByScroll(e.Location));
+                if (_selectionHandler != null && IsMouseInContainer(new Point(e.X, e.Y)))
+                    _selectionHandler.SelectWord(parent, OffsetByScroll(new Point(e.X, e.Y)));
             }
             catch (Exception ex)
             {
@@ -527,30 +638,8 @@ namespace HtmlRenderer
 
             try
             {
-                var loc = OffsetByScroll(e.Location);
-                if (_selectionHandler != null && IsMouseInContainer(e.Location))
-                    _selectionHandler.HandleMouseMove(parent, loc);
-
-                /*
-                if( _hoverBoxes != null )
-                {
-                    bool refresh = false;
-                    foreach(var hoverBox in _hoverBoxes)
-                    {
-                        foreach(var rect in hoverBox.Item1.Rectangles.Values)
-                        {
-                            if( rect.Contains(loc) )
-                            {
-                                //hoverBox.Item1.Color = "gold";
-                                refresh = true;
-                            }
-                        }
-                    }
-
-                    if(refresh)
-                        RequestRefresh(true);
-                }
-                 */
+                if (_selectionHandler != null && IsMouseInContainer(new Point(e.X, e.Y)))
+                    _selectionHandler.HandleMouseMove(parent, OffsetByScroll(new Point(e.X, e.Y)));
             }
             catch (Exception ex)
             {
@@ -574,6 +663,14 @@ namespace HtmlRenderer
             catch (Exception ex)
             {
                 ReportError(HtmlRenderErrorType.KeyboardMouse, "Failed mouse leave handle", ex);
+            }
+        }
+
+        public void HandleKeyDownLocked(Control parent, KeyEventArgs e)
+        {
+            using (AutoLock l = new AutoLock(_lock))
+            {
+                HandleKeyDown(parent, e);
             }
         }
 
@@ -616,6 +713,7 @@ namespace HtmlRenderer
         /// <param name="args">the event args</param>
         internal void RaiseHtmlStylesheetLoadEvent(HtmlStylesheetLoadEventArgs args)
         {
+
             try
             {
                 if (StylesheetLoad != null)
@@ -637,7 +735,7 @@ namespace HtmlRenderer
         {
             try
             {
-                if(ImageLoad != null)
+                if (ImageLoad != null)
                 {
                     ImageLoad(this, args);
                 }
@@ -667,13 +765,18 @@ namespace HtmlRenderer
             }
         }
 
+        internal void ReportError(HtmlRenderErrorType type, string message)
+        {
+            ReportError(type, message, null);
+        }
+
         /// <summary>
         /// Report error in html render process.
         /// </summary>
         /// <param name="type">the type of error to report</param>
         /// <param name="message">the error message</param>
         /// <param name="exception">optional: the exception that occured</param>
-        internal void ReportError(HtmlRenderErrorType type, string message, Exception exception = null)
+        internal void ReportError(HtmlRenderErrorType type, string message, Exception exception)
         {
             try
             {
@@ -689,10 +792,8 @@ namespace HtmlRenderer
         /// <summary>
         /// Handle link clicked going over <see cref="LinkClicked"/> event and using <see cref="Process.Start()"/> if not canceled.
         /// </summary>
-        /// <param name="parent">the control hosting the html to invalidate</param>
-        /// <param name="e">the mouse event args</param>
         /// <param name="link">the link that was clicked</param>
-        internal void HandleLinkClicked(Control parent, MouseEventArgs e, CssBox link)
+        internal void HandleLinkClicked(CssBox link)
         {
             if (LinkClicked != null)
             {
@@ -708,40 +809,23 @@ namespace HtmlRenderer
             {
                 if (link.HrefLink.StartsWith("#"))
                 {
-                    if( ScrollChange != null )
+                    if (ScrollChange != null)
                     {
-                        var box = DomUtils.GetBoxById(_root, link.HrefLink.Substring(1));
-                        if (box != null)
+                        var linkBox = DomUtils.GetBoxById(_root, link.HrefLink.Substring(1));
+                        if (linkBox != null)
                         {
-                            var rect = CommonUtils.GetFirstValueOrDefault(box.Rectangles, box.Bounds);
-                            ScrollChange(this, new HtmlScrollEventArgs(Point.Round(rect.Location)));
-                            HandleMouseMove(parent, e);
+                            RectangleF rect = CommonUtils.GetFirstValueOrDefault(linkBox.Rectangles);
+                            ScrollChange(this, new HtmlScrollEventArgs(RenderUtils.PointRound(new PointF(rect.X, rect.Y))));
                         }
                     }
                 }
                 else
                 {
-                    var nfo = new ProcessStartInfo(link.HrefLink);
+                    var nfo = new ProcessStartInfo(link.HrefLink, "");
                     nfo.UseShellExecute = true;
                     Process.Start(nfo);
                 }
             }
-        }
-
-        /// <summary>
-        /// Add css box that has ":hover" selector to be handled on mouse hover.
-        /// </summary>
-        /// <param name="box">the box that has the hover selector</param>
-        /// <param name="block">the css block with the css data with the selector</param>
-        internal void AddHoverBox(CssBox box, CssBlock block)
-        {
-            ArgChecker.AssertArgNotNull(box, "box");
-            ArgChecker.AssertArgNotNull(block, "block");
-
-            if(_hoverBoxes == null)
-                _hoverBoxes = new List<Tupler<CssBox, CssBlock>>();
-
-            _hoverBoxes.Add(new Tupler<CssBox, CssBlock>(box, block));
         }
 
         /// <summary>
@@ -750,7 +834,10 @@ namespace HtmlRenderer
         /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
-            Dispose(true);
+            using (AutoLock l = new AutoLock(_lock))
+            {
+                Dispose(true);
+            }
         }
 
 
@@ -763,7 +850,7 @@ namespace HtmlRenderer
         /// <returns>the adjusted location</returns>
         private Point OffsetByScroll(Point location)
         {
-            location.Offset(-(int) ScrollOffset.X, -(int) ScrollOffset.Y);
+            location.Offset(-(int)_scrollOffset.X, -(int)_scrollOffset.Y);
             return location;
         }
 
@@ -773,7 +860,7 @@ namespace HtmlRenderer
         /// </summary>
         private bool IsMouseInContainer(Point location)
         {
-            return location.X >= _location.X && location.X <= _location.X + _actualSize.Width && location.Y >= _location.Y + ScrollOffset.Y && location.Y <= _location.Y + ScrollOffset.Y + _actualSize.Height;
+            return location.X >= _location.X && location.X <= _location.X + _actualSize.Width && location.Y >= _location.Y + _scrollOffset.Y && location.Y <= _location.Y + _scrollOffset.Y + _actualSize.Height;
         }
 
         /// <summary>
@@ -806,5 +893,127 @@ namespace HtmlRenderer
         }
 
         #endregion
+
+
+        private interface Lock
+        {
+            void Lock();
+            void Unlock();
+        }
+
+        private class InterlockedMutex : Lock
+        {
+#if !PC
+		    const string kernel32 = "coredll";
+#else
+            const string kernel32 = "kernel32";
+#endif
+
+            [System.Runtime.InteropServices.DllImport(kernel32)]
+            private static extern IntPtr CreateEvent(IntPtr lpEventAttributes, bool bManualReset, bool bInitialState, string lpName);
+
+            [System.Runtime.InteropServices.DllImport(kernel32)]
+            private static extern bool SetEvent(IntPtr hHandle);
+
+            [System.Runtime.InteropServices.DllImport(kernel32)]
+            private static extern Int32 WaitForSingleObject(IntPtr hHandle, Int32 dwMilliseconds);
+
+            [System.Runtime.InteropServices.DllImport(kernel32)]
+            private static extern bool CloseHandle(IntPtr hObject);
+
+            private const int FLAG_NONE = 0;
+            private const int FLAG_PROCESSING = 1;
+            private const int FLAG_WAITING = 2;
+
+            private readonly IntPtr _event;
+            private int _state;
+
+            public InterlockedMutex(String name)
+            {
+                _event = CreateEvent(IntPtr.Zero, false, false, name);
+                _state = FLAG_NONE;
+            }
+
+            ~InterlockedMutex()
+            {
+                CloseHandle(_event);
+            }
+
+            private int ObtainState()
+            {
+                int state = -1;
+
+                for (int i = 0; i < 10; i++)
+                {
+                    state = Interlocked.Exchange(ref _state, -1);
+                    if (state != -1)
+                        break;
+                    Thread.Sleep(300);
+                }
+                if (state == -1)
+                    throw new Exception("Unable to obtain state!");
+
+                return state;
+            }
+
+            public void Lock()
+            {
+                int state = ObtainState();
+                //Console.WriteLine("Lock.State: " + state);
+                if (state == 0)
+                {
+                    //Console.WriteLine("Lock.Processing");
+                    Interlocked.Exchange(ref _state, FLAG_PROCESSING);
+                }
+                else
+                {
+                    //Console.WriteLine("Lock.WaitForSingleObject");
+                    Interlocked.Exchange(ref _state, state | FLAG_WAITING);
+                    WaitForSingleObject(_event, 0xFFFFFF);
+                    Lock();
+                }
+            }
+
+            public void Unlock()
+            {
+                int state = ObtainState();
+                //Console.WriteLine("Unlock.State: " + state);
+                if ((state & FLAG_WAITING) == FLAG_WAITING)
+                {
+                    //Console.WriteLine("Unlock.SetEvent");
+                    SetEvent(_event);
+                }
+                else
+                {
+                    //Console.WriteLine("Unlock.None");
+                    Interlocked.Exchange(ref _state, FLAG_NONE);
+                }
+            }
+        }
+
+        private struct AutoLock : IDisposable
+        {
+            private readonly Lock _lock;
+
+            public AutoLock(Lock l)
+            {
+                _lock = l;
+                _lock.Lock();
+            }
+
+            public AutoLock(AutoLock self)
+            {
+                _lock = self._lock;
+            }
+
+            #region IDisposable Members
+
+            public void Dispose()
+            {
+                _lock.Unlock();
+            }
+
+            #endregion
+        }
     }
 }

@@ -22,7 +22,11 @@ namespace HtmlRenderer.Parse
     /// <summary>
     /// Handle css DOM tree generation from raw html and stylesheet.
     /// </summary>
+#if CF_1_0
+    internal class DomParser
+#else
     internal static class DomParser
+#endif
     {
         /// <summary>
         /// Generate css tree by parsing the given html and applying the given css style data on it.
@@ -44,8 +48,6 @@ namespace HtmlRenderer.Parse
                 SetTextSelectionStyle(htmlContainer, cssData);
 
                 CorrectTextBoxes(root);
-
-                CorrectImgBoxes(root);
 
                 CorrectLineBreaksBlocks(root);
 
@@ -210,73 +212,53 @@ namespace HtmlRenderer.Parse
         /// <summary>
         /// Check if the given css block is assignable to the given css box.<br/>
         /// the block is assignable if it has no hierarchical selectors or if the hierarchy matches.<br/>
-        /// Special handling for ":hover" pseudo-class.<br/>
         /// </summary>
         /// <param name="box">the box to check assign to</param>
         /// <param name="block">the block to check assign of</param>
         /// <returns>true - the block is assignable to the box, false - otherwise</returns>
         private static bool IsBlockAssignableToBox(CssBox box, CssBlock block)
         {
-            bool assignable = true;
             if (block.Selectors != null)
             {
-                assignable = IsBlockAssignableToBoxWithSelector(box, block);
-            }
-            else if (box.HtmlTag.Name.Equals("a", StringComparison.OrdinalIgnoreCase) && block.Class.Equals("a", StringComparison.OrdinalIgnoreCase) && !box.HtmlTag.HasAttribute("href"))
-            {
-                assignable = false;
-            }
-            
-            if(assignable && block.Hover)
-            {
-                box.HtmlContainer.AddHoverBox(box, block);
-                assignable = false;
-            }
-
-            return assignable;
-        }
-
-        /// <summary>
-        /// Check if the given css block is assignable to the given css box by validating the selector.<br/>
-        /// </summary>
-        /// <param name="box">the box to check assign to</param>
-        /// <param name="block">the block to check assign of</param>
-        /// <returns>true - the block is assignable to the box, false - otherwise</returns>
-        private static bool IsBlockAssignableToBoxWithSelector(CssBox box, CssBlock block)
-        {
-            foreach(var selector in block.Selectors)
-            {
-                bool matched = false;
-                while( !matched )
+                foreach (var selector in block.Selectors)
                 {
-                    box = box.ParentBox;
-                    while( box != null && box.HtmlTag == null )
+                    bool matched = false;
+                    while (!matched)
+                    {
                         box = box.ParentBox;
+                        while (box != null && box.HtmlTag == null)
+                            box = box.ParentBox;
 
-                    if( box == null )
-                        return false;
+                        if (box == null)
+                            return false;
 
-                    if( box.HtmlTag.Name.Equals(selector.Class, StringComparison.InvariantCultureIgnoreCase) )
-                        matched = true;
-
-                    if( !matched && box.HtmlTag.HasAttribute("class") )
-                    {
-                        var className = box.HtmlTag.TryGetAttribute("class");
-                        if( selector.Class.Equals("." + className, StringComparison.InvariantCultureIgnoreCase) || selector.Class.Equals(box.HtmlTag.Name + "." + className, StringComparison.InvariantCultureIgnoreCase) )
+                        if (box.HtmlTag.Name.Equals(selector.Class,StringComparison.InvariantCultureIgnoreCase))
                             matched = true;
-                    }
 
-                    if( !matched && box.HtmlTag.HasAttribute("id") )
-                    {
-                        var id = box.HtmlTag.TryGetAttribute("id");
-                        if( selector.Class.Equals("#" + id, StringComparison.InvariantCultureIgnoreCase) )
-                            matched = true;
-                    }
+                        if (!matched && box.HtmlTag.HasAttribute("class"))
+                        {
+                            var className = box.HtmlTag.TryGetAttribute("class");
+                            if (selector.Class.Equals("." + className,StringComparison.InvariantCultureIgnoreCase) || selector.Class.Equals(box.HtmlTag.Name + "." + className,StringComparison.InvariantCultureIgnoreCase))
+                                matched = true;
+                        }
 
-                    if( !matched && selector.DirectParent )
-                        return false;
+                        if (!matched && box.HtmlTag.HasAttribute("id"))
+                        {
+                            var id = box.HtmlTag.TryGetAttribute("id");
+                            if (selector.Class.Equals("#" + id,StringComparison.InvariantCultureIgnoreCase))
+                                matched = true;
+                        }
+
+                        if (!matched && selector.DirectParent)
+                            return false;
+                    }
                 }
             }
+            else if (box.HtmlTag.Name.Equals("a") && !box.HtmlTag.HasAttribute("href"))
+            {
+                return false;
+            }
+
             return true;
         }
 
@@ -369,9 +351,9 @@ namespace HtmlRenderer.Parse
                     {
                         case HtmlConstants.Align:
                             if (value == HtmlConstants.Left || value == HtmlConstants.Center || value == HtmlConstants.Right || value == HtmlConstants.Justify)
-                                box.TextAlign = value.ToLower();
+                                box.TextAlign = value;
                             else
-                                box.VerticalAlign = value.ToLower();
+                                box.VerticalAlign = value;
                             break;
                         case HtmlConstants.Background:
                             box.BackgroundImage = value;
@@ -404,10 +386,10 @@ namespace HtmlRenderer.Parse
                             ApplyTablePadding(box, value);
                             break;
                         case HtmlConstants.Color:
-                            box.Color = value.ToLower();
+                            box.Color = value;
                             break;
                         case HtmlConstants.Dir:
-                            box.Direction = value.ToLower();
+                            box.Direction = value;
                             break;
                         case HtmlConstants.Face:
                             box.FontFamily = CssParser.ParseFontFamily(value);
@@ -419,7 +401,7 @@ namespace HtmlRenderer.Parse
                             box.MarginRight = box.MarginLeft = TranslateLength(value);
                             break;
                         case HtmlConstants.Nowrap:
-                            box.WhiteSpace = CssConstants.NoWrap;
+                            box.WhiteSpace = CssConstants.Nowrap;
                             break;
                         case HtmlConstants.Size:
                             if (tag.Name.Equals(HtmlConstants.Hr,StringComparison.OrdinalIgnoreCase))
@@ -428,7 +410,7 @@ namespace HtmlRenderer.Parse
                                 box.FontSize = value;
                             break;
                         case HtmlConstants.Valign:
-                            box.VerticalAlign = value.ToLower();
+                            box.VerticalAlign = value;
                             break;
                         case HtmlConstants.Vspace:
                             box.MarginTop = box.MarginBottom = TranslateLength(value);
@@ -553,29 +535,6 @@ namespace HtmlRenderer.Parse
                 {
                     // recursive
                     CorrectTextBoxes(childBox);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Go over all image boxes and if its display style is set to block, put it inside another block but set the image to inline.
-        /// </summary>
-        /// <param name="box">the current box to correct its sub-tree</param>
-        private static void CorrectImgBoxes(CssBox box)
-        {
-            for (int i = box.Boxes.Count - 1; i >= 0; i--)
-            {
-                var childBox = box.Boxes[i];
-                if (childBox is CssBoxImage && childBox.Display == CssConstants.Block)
-                {
-                    var block = CssBox.CreateBlock(childBox.ParentBox, null, childBox);
-                    childBox.ParentBox = block;
-                    childBox.Display = CssConstants.Inline;
-                }
-                else
-                {
-                    // recursive
-                    CorrectImgBoxes(childBox);
                 }
             }
         }

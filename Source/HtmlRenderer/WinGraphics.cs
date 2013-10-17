@@ -78,7 +78,7 @@ namespace HtmlRenderer
         /// </summary>
         /// <param name="rect"><see cref="T:System.Drawing.RectangleF"/> structure to combine. </param>
         /// <param name="combineMode">Member of the <see cref="T:System.Drawing.Drawing2D.CombineMode"/> enumeration that specifies the combining operation to use. </param>
-        public void SetClip(RectangleF rect, CombineMode combineMode = CombineMode.Replace)
+        public void SetClip(RectangleF rect, CombineMode combineMode)
         {
             ReleaseHdc();
             _g.SetClip(rect, combineMode);
@@ -130,21 +130,12 @@ namespace HtmlRenderer
         /// <param name="font">the font to use to draw the string</param>
         /// <param name="color">the text color to set</param>
         /// <param name="point">the location to start string draw (top-left)</param>
-        /// <param name="size">used to know the size of the rendered text for transparent text support</param>
-        public void DrawString(String str, Font font, Color color, PointF point, SizeF size)
+        public void DrawString(String str, Font font, Color color, PointF point)
         {
-            if( color.A == 255 )
-            {
-                SetFont(font);
-                SetTextColor(color);
+            SetFont(font);
+            SetTextColor(color);
 
-                Win32Utils.TextOut(_hdc, (int)Math.Round(point.X), (int)Math.Round(point.Y), str, str.Length);
-            }
-            else
-            {
-                InitHdc();
-                DrawTransparentText(_hdc, str, font, new Point((int)Math.Round(point.X), (int)Math.Round(point.Y)), Size.Round(size), color);
-            }
+            Win32Utils.TextOut(_hdc, (int)Math.Round(point.X), (int)Math.Round(point.Y), str, str.Length);
         }
 
         /// <summary>
@@ -186,7 +177,7 @@ namespace HtmlRenderer
         public void DrawLine(Pen pen, float x1, float y1, float x2, float y2)
         {
             ReleaseHdc();
-            _g.DrawLine(pen, x1, y1, x2, y2);
+            _g.DrawLine(pen, (int)x1, (int)y1, (int)x2, (int) y2);
         }
 
         /// <summary>
@@ -196,13 +187,13 @@ namespace HtmlRenderer
         public void DrawRectangle(Pen pen, float x, float y, float width, float height)
         {
             ReleaseHdc();
-            _g.DrawRectangle(pen, x, y, width, height);
+            _g.DrawRectangle(pen, (int)x, (int)y, (int)width, (int)height);
         }
 
         public void FillRectangle(Brush getSolidBrush, float left, float top, float width, float height)
         {
             ReleaseHdc();
-            _g.FillRectangle(getSolidBrush, left, top, width, height);
+            _g.FillRectangle(getSolidBrush, (int)left, (int)top, (int)width, (int)height);
         }
 
         /// <summary>
@@ -215,7 +206,7 @@ namespace HtmlRenderer
         public void DrawImage(Image image, RectangleF destRect, RectangleF srcRect)
         {
             ReleaseHdc();
-            _g.DrawImage(image, destRect, srcRect, GraphicsUnit.Pixel);
+            _g.DrawImage(image, RenderUtils.ToRect(destRect), RenderUtils.ToRect(srcRect), GraphicsUnit.Pixel);
         }
 
         /// <summary>
@@ -225,7 +216,7 @@ namespace HtmlRenderer
         public void DrawImage(Image image, RectangleF destRect)
         {
             ReleaseHdc();
-            _g.DrawImage(image, destRect);
+            _g.DrawImage(image, (int) destRect.X, (int) destRect.Y);
         }
 
         /// <summary>
@@ -254,7 +245,13 @@ namespace HtmlRenderer
         public void FillPolygon(Brush brush, PointF[] points)
         {
             ReleaseHdc();
-            _g.FillPolygon(brush, points);
+
+            Point[] newPoints = new Point[points.Length];
+            for(int i = 0; i< points.Length; i++)
+            {
+                newPoints[i] = new Point((int)points[i].X, (int)points[i].Y);
+            }
+            _g.FillPolygon(brush, newPoints);
         }
 
         #endregion
@@ -311,39 +308,6 @@ namespace HtmlRenderer
             InitHdc();
             int rgb = ( color.B & 0xFF ) << 16 | ( color.G & 0xFF ) << 8 | color.R;
             Win32Utils.SetTextColor(_hdc, rgb);
-        }
-
-        /// <summary>
-        /// Special draw logic to draw transparent text using GDI.<br/>
-        /// 1. Create in-memory DC<br/>
-        /// 2. Copy background to in-memory DC<br/>
-        /// 3. Draw the text to in-memory DC<br/>
-        /// 4. Copy the in-memory DC to the proper location with alpha blend<br/>
-        /// </summary>
-        private static void DrawTransparentText(IntPtr hdc, string str, Font font, Point point, Size size, Color color)
-        {
-            IntPtr dib;
-            var memoryHdc = Win32Utils.CreateMemoryHdc(hdc, size.Width, size.Height, out dib);
-
-            try
-            {
-                // copy target background to memory HDC so when copied back it will have the proper background
-                Win32Utils.BitBlt(memoryHdc, 0, 0, size.Width, size.Height, hdc, point.X, point.Y, Win32Utils.BitBltCopy);
-
-                // Create and select font
-                Win32Utils.SelectObject(memoryHdc, FontsUtils.GetCachedHFont(font));
-                Win32Utils.SetTextColor(memoryHdc, (color.B & 0xFF) << 16 | (color.G & 0xFF) << 8 | color.R);
-
-                // Draw text to memory HDC
-                Win32Utils.TextOut(memoryHdc, 0, 0, str, str.Length);
-
-                // copy from memory HDC to normal HDC with alpha blend so achive the transparent text
-                Win32Utils.AlphaBlend(hdc, point.X, point.Y, size.Width, size.Height, memoryHdc, 0, 0, size.Width, size.Height, new BlendFunction(color.A));
-            }
-            finally
-            {
-                Win32Utils.ReleaseMemoryHdc(memoryHdc, dib);                
-            }
         }
 
         #endregion

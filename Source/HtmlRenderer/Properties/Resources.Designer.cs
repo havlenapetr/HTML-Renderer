@@ -21,7 +21,9 @@ namespace HtmlRenderer.Properties {
     // with the /str option, or rebuild your VS project.
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+#if !CF_1_0 && !CF_2_0
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+#endif
     internal class Resources {
         
         private static global::System.Resources.ResourceManager resourceMan;

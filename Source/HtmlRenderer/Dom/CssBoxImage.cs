@@ -66,7 +66,7 @@ namespace HtmlRenderer.Dom
         /// Paints the fragment
         /// </summary>
         /// <param name="g">the device to draw to</param>
-        protected override void PaintImp(IGraphics g)
+        protected override void PaintImp(IGraphics g, bool profile)
         {
             // load image iff it is in visible rectangle
             if (_imageLoadHandler == null)
@@ -77,7 +77,7 @@ namespace HtmlRenderer.Dom
 
             var rect = CommonUtils.GetFirstValueOrDefault(Rectangles);
             PointF offset = HtmlContainer.ScrollOffset;
-            rect.Offset(offset);
+            rect = RenderUtils.RectOffset(rect, offset);
 
             var prevClip = RenderUtils.ClipGraphicsByOverflow(g, this);
 
@@ -85,7 +85,7 @@ namespace HtmlRenderer.Dom
             BordersDrawHandler.DrawBoxBorders(g, this, rect, true, true);
 
             RectangleF r = _imageWord.Rectangle;
-            r.Offset(offset);
+            r = RenderUtils.RectOffset(r, offset);
             r.Height -= ActualBorderTopWidth + ActualBorderBottomWidth + ActualPaddingTop + ActualPaddingBottom;
             r.Y += ActualBorderTopWidth + ActualPaddingTop;
             

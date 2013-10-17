@@ -31,12 +31,12 @@ namespace HtmlRenderer
         /// <summary>
         /// used to return empty array
         /// </summary>
-        private static readonly List<CssBlock> _emptyArray = new List<CssBlock>();
+        private static readonly IList<CssBlock> _emptyArray = new List<CssBlock>();
 
         /// <summary>
         /// dictionary of media type to dictionary of css class name to the cssBlocks collection with all the data.
         /// </summary>
-        private readonly Dictionary<string, Dictionary<string, List<CssBlock>>> _mediaBlocks = new Dictionary<string, Dictionary<string, List<CssBlock>>>(StringComparer.InvariantCultureIgnoreCase);
+        private readonly IDictionary<string, Dictionary<string, List<CssBlock>>> _mediaBlocks = new Dictionary<string, Dictionary<string, List<CssBlock>>>(StringComparer.InvariantCultureIgnoreCase);
 
         #endregion
 
@@ -58,7 +58,7 @@ namespace HtmlRenderer
         /// <param name="stylesheet">the stylesheet source to parse</param>
         /// <param name="combineWithDefault">true - combine the parsed css data with default css data, false - return only the parsed css data</param>
         /// <returns>the parsed css data</returns>
-        public static CssData Parse(string stylesheet, bool combineWithDefault = true)
+        public static CssData Parse(string stylesheet, bool combineWithDefault)
         {
             return CssParser.ParseStyleSheet(stylesheet, combineWithDefault);
         }
@@ -71,16 +71,26 @@ namespace HtmlRenderer
             get { return _mediaBlocks; }
         }
 
+        public bool ContainsCssBlock(string className)
+        {
+            return ContainsCssBlock(className, "all");
+        }
+
         /// <summary>
         /// Check if there are css blocks for the given class selector.
         /// </summary>
         /// <param name="className">the class selector to check for css blocks by</param>
         /// <param name="media">optinal: the css media type (default - all)</param>
         /// <returns>true - has css blocks for the class, false - otherwise</returns>
-        public bool ContainsCssBlock(string className, string media = "all")
+        public bool ContainsCssBlock(string className, string media)
         {
             Dictionary<string, List<CssBlock>> mid;
             return _mediaBlocks.TryGetValue(media, out mid) && mid.ContainsKey(className);
+        }
+
+        public IEnumerable<CssBlock> GetCssBlock(string className)
+        {
+            return GetCssBlock(className, "all");
         }
 
         /// <summary>
@@ -93,7 +103,7 @@ namespace HtmlRenderer
         /// <param name="className">the class selector to get css blocks by</param>
         /// <param name="media">optinal: the css media type (default - all)</param>
         /// <returns>collection of css blocks, empty collection if no blocks exists (never null)</returns>
-        public IEnumerable<CssBlock> GetCssBlock(string className, string media = "all")
+        public IEnumerable<CssBlock> GetCssBlock(string className, string media)
         {
             List<CssBlock> block = null;
             Dictionary<string, List<CssBlock>> mid;

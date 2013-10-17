@@ -51,10 +51,12 @@ namespace HtmlRenderer.Handlers
         /// </summary>
         private readonly Utils.Action<Image, Rectangle, bool> _loadCompleteCallback;
 
+#if PC
         /// <summary>
         /// the web client used to download image from uri (to cancel on dispose)
         /// </summary>
         private WebClient _client;
+#endif
 
         /// <summary>
         /// Must be open as long as the image is in use
@@ -182,9 +184,6 @@ namespace HtmlRenderer.Handlers
             ReleaseObjects();
         }
 
-
-        #region Private methods
-
         /// <summary>
         /// Load image from path of image file or uri.
         /// </summary>
@@ -194,7 +193,11 @@ namespace HtmlRenderer.Handlers
             var uri = CommonUtils.TryGetUri(path);
             if (uri != null && uri.Scheme != "file")
             {
+#if PC
                 SetImageFromUri(uri);
+#else
+                throw new NotSupportedException();
+#endif
             }
             else
             {
@@ -211,6 +214,8 @@ namespace HtmlRenderer.Handlers
             }
         }
 
+        #region Private methods
+
         /// <summary>
         /// Extract image object from inline base64 encoded data in the src of the html img element.
         /// </summary>
@@ -218,7 +223,7 @@ namespace HtmlRenderer.Handlers
         /// <returns>image from base64 data string or null if failed</returns>
         private static Image GetImageFromData(string src)
         {
-            var s = src.Substring(src.IndexOf(':') + 1).Split(new[] { ',' }, 2);
+            var s = src.Substring(src.IndexOf(':') + 1).Split(',');
             if (s.Length == 2)
             {
                 int imagePartsCount = 0, base64PartsCount = 0;
@@ -234,7 +239,9 @@ namespace HtmlRenderer.Handlers
                 if (imagePartsCount > 0)
                 {
                     byte[] imageData = base64PartsCount > 0 ? Convert.FromBase64String(s[1].Trim()) : new UTF8Encoding().GetBytes(Uri.UnescapeDataString(s[1].Trim()));
+#if PC
                     return Image.FromStream(new MemoryStream(imageData));
+#endif
                 }
             }
             return null;
@@ -292,7 +299,9 @@ namespace HtmlRenderer.Handlers
                 if (((FileInfo)source).Exists)
                 {
                     _imageFileStream = File.Open(((FileInfo) source).FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+#if PC
                     _image = Image.FromStream(_imageFileStream);
+#endif
                     _releaseImageObject = true;
                 }
                 ImageLoadComplete();
@@ -304,6 +313,7 @@ namespace HtmlRenderer.Handlers
             }
         }
 
+#if PC
         /// <summary>
         /// Load image from the given URI by downloading it.<br/>
         /// Create local file name in temp folder from the URI, if the file already exists use it as it has already been downloaded.
@@ -385,11 +395,17 @@ namespace HtmlRenderer.Handlers
                 ImageLoadComplete();
             }
         }
+#endif
+
+        private void ImageLoadComplete()
+        {
+            ImageLoadComplete(true);
+        }
 
         /// <summary>
         /// Flag image load complete and request refresh for re-layout and invalidate.
         /// </summary>
-        private void ImageLoadComplete(bool async = true)
+        private void ImageLoadComplete(bool async)
         {
             // can happen if some operation return after the handler was disposed
             if(_disposed)
@@ -410,15 +426,21 @@ namespace HtmlRenderer.Handlers
             }
             if (_imageFileStream != null)
             {
+#if !CF_1_0 && !CF_2_0
                 _imageFileStream.Dispose();
+#else
+                _imageFileStream.Close();
+#endif
                 _imageFileStream = null;
             }
+#if PC
             if (_client != null)
             {
                 _client.CancelAsync();
                 _client.Dispose();
                 _client = null;
             }
+#endif
         }
 
         #endregion

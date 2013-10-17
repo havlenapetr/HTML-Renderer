@@ -4,6 +4,18 @@ using System.Drawing.Drawing2D;
 
 namespace HtmlRenderer
 {
+#if !PC
+    public enum SmoothingMode
+    {
+        AntiAlias = 4,
+        Default = 0,
+        HighQuality = 2,
+        HighSpeed = 1,
+        Invalid = -1,
+        None = 3
+    }
+#endif
+
     public interface IGraphics : IDisposable
     {
         /// <summary>
@@ -54,8 +66,7 @@ namespace HtmlRenderer
         /// <param name="font">the font to use to draw the string</param>
         /// <param name="color">the text color to set</param>
         /// <param name="point">the location to start string draw (top-left)</param>
-        /// <param name="size">used to know the size of the rendered text for transparent text support</param>
-        void DrawString(String str, Font font, Color color, PointF point, SizeF size);
+        void DrawString(String str, Font font, Color color, PointF point);
 
         /// <summary>
         /// Draws a line connecting the two points specified by the coordinate pairs.
@@ -72,6 +83,12 @@ namespace HtmlRenderer
         void FillRectangle(Brush getSolidBrush, float left, float top, float width, float height);
 
         /// <summary>
+        /// Fills the interior of a polygon defined by an array of points specified by <see cref="T:System.Drawing.PointF"/> structures.
+        /// </summary>
+        /// <param name="brush"><see cref="T:System.Drawing.Brush"/> that determines the characteristics of the fill. </param><param name="points">Array of <see cref="T:System.Drawing.PointF"/> structures that represent the vertices of the polygon to fill. </param><exception cref="T:System.ArgumentNullException"><paramref name="brush"/> is null.-or-<paramref name="points"/> is null.</exception>
+        void FillPolygon(Brush brush, PointF[] points);
+
+        /// <summary>
         /// Draws the specified portion of the specified <see cref="T:System.Drawing.Image"/> at the specified location and with the specified size.
         /// </summary>
         /// <param name="image"><see cref="T:System.Drawing.Image"/> to draw. </param>
@@ -83,8 +100,15 @@ namespace HtmlRenderer
         /// <summary>
         /// Draws the specified <see cref="T:System.Drawing.Image"/> at the specified location and with the specified size.
         /// </summary>
-        /// <param name="image"><see cref="T:System.Drawing.Image"/> to draw. </param><param name="destRect"><see cref="T:System.Drawing.Rectangle"/> structure that specifies the location and size of the drawn image. </param><exception cref="T:System.ArgumentNullException"><paramref name="image"/> is null.</exception><PermissionSet><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence"/></PermissionSet>
+        /// <param name="image"><see cref="T:System.Drawing.Image"/> to draw. </param><param name="destRect"><see cref="T:System.Drawing.RectangleF"/> structure that specifies the location and size of the drawn image. </param><exception cref="T:System.ArgumentNullException"><paramref name="image"/> is null.</exception><PermissionSet><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence"/></PermissionSet>
         void DrawImage(Image image, RectangleF destRect);
+
+//#if PC
+        /// <summary>
+        /// Draws a <see cref="T:System.Drawing.Drawing2D.GraphicsPath"/>.
+        /// </summary>
+        /// <param name="pen"><see cref="T:System.Drawing.Pen"/> that determines the color, width, and style of the path. </param><param name="path"><see cref="T:System.Drawing.Drawing2D.GraphicsPath"/> to draw. </param><exception cref="T:System.ArgumentNullException"><paramref name="pen"/> is null.-or-<paramref name="path"/> is null.</exception><PermissionSet><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence"/></PermissionSet>
+        void DrawPath(Pen pen, GraphicsPath path);
 
         /// <summary>
         /// Fills the interior of a <see cref="T:System.Drawing.Drawing2D.GraphicsPath"/>.
@@ -93,21 +117,10 @@ namespace HtmlRenderer
         void FillPath(Brush brush, GraphicsPath path);
 
         /// <summary>
-        /// Fills the interior of a polygon defined by an array of points specified by <see cref="T:System.Drawing.PointF"/> structures.
-        /// </summary>
-        /// <param name="brush"><see cref="T:System.Drawing.Brush"/> that determines the characteristics of the fill. </param><param name="points">Array of <see cref="T:System.Drawing.PointF"/> structures that represent the vertices of the polygon to fill. </param><exception cref="T:System.ArgumentNullException"><paramref name="brush"/> is null.-or-<paramref name="points"/> is null.</exception>
-        void FillPolygon(Brush brush, PointF[] points);
-
-        /// <summary>
         /// Sets the clipping region of this <see cref="T:System.Drawing.Graphics"/> to the result of the specified operation combining the current clip region and the rectangle specified by a <see cref="T:System.Drawing.RectangleF"/> structure.
         /// </summary>
         /// <param name="rect"><see cref="T:System.Drawing.RectangleF"/> structure to combine. </param><param name="combineMode">Member of the <see cref="T:System.Drawing.Drawing2D.CombineMode"/> enumeration that specifies the combining operation to use. </param><PermissionSet><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence"/></PermissionSet>
-        void SetClip(RectangleF rect, CombineMode combineMode = CombineMode.Replace);
-
-        /// <summary>
-        /// Draws a <see cref="T:System.Drawing.Drawing2D.GraphicsPath"/>.
-        /// </summary>
-        /// <param name="pen"><see cref="T:System.Drawing.Pen"/> that determines the color, width, and style of the path. </param><param name="path"><see cref="T:System.Drawing.Drawing2D.GraphicsPath"/> to draw. </param><exception cref="T:System.ArgumentNullException"><paramref name="pen"/> is null.-or-<paramref name="path"/> is null.</exception><PermissionSet><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence"/></PermissionSet>
-        void DrawPath(Pen pen, GraphicsPath path);
+        void SetClip(RectangleF rect, CombineMode combineMode);
+//#endif
     }
 }

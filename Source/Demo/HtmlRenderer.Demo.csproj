@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8AD34FE8-8382-4A8A-B3AA-A0392ED42423}</ProjectGuid>
     <OutputType>WinExe</OutputType>
@@ -16,6 +16,9 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>2.0</OldToolsVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -28,18 +31,15 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;PC</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
@@ -49,7 +49,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;PC</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
@@ -67,28 +67,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PerfForm.cs">
+    <Compile Include="DemoFormCF.cs">
       <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="PerfForm.Designer.cs">
-      <DependentUpon>PerfForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="DemoForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="DemoForm.Designer.cs">
-      <DependentUpon>DemoForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="PerfForm.resx">
-      <DependentUpon>PerfForm.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="DemoForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>DemoForm.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -99,13 +82,6 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <Compile Include="SampleForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SampleForm.Designer.cs">
-      <DependentUpon>SampleForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="SyntaxHilight.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\CustomFont.ttf" />
@@ -148,35 +124,31 @@
     <None Include="Resources\web_pallete.gif" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Samples\10.HtmlPanel.htm" />
+    <EmbeddedResource Include="Samples\12.HtmlPanel.htm" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Samples\11.HtmlLabel.htm" />
+    <EmbeddedResource Include="Samples\10.HtmlLabel.htm" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Samples\12.HtmlToolTip.htm" />
+    <EmbeddedResource Include="Samples\13.HtmlToolTip.htm" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Samples\02.Text.htm" />
+    <EmbeddedResource Include="Samples\03.Text.htm" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Samples\05.Images.htm" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Samples\04.Links.htm" />
+    <EmbeddedResource Include="Samples\07.Links.htm" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Samples\03.Tables.htm" />
+    <EmbeddedResource Include="Samples\04.Tables.htm" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Samples\20.About.htm" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="SampleForm.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>SampleForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Samples\07.Additional features.htm" />
+    <EmbeddedResource Include="Samples\09.Non standard.htm" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\image32.png" />
@@ -186,12 +158,22 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\method16.gif" />
-    <EmbeddedResource Include="Samples\13.HtmlRender.htm" />
+    <EmbeddedResource Include="Samples\14.HtmlRender.htm" />
   </ItemGroup>
   <ItemGroup>
-    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
       <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
@@ -215,39 +197,39 @@
     <EmbeddedResource Include="TestSamples\02.Line break.htm" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="TestSamples\21.Bullets.htm" />
+    <EmbeddedResource Include="DemoFormCF.resx">
+      <DependentUpon>DemoFormCF.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="TestSamples\20.Fonts decorations.htm" />
     <EmbeddedResource Include="TestSamples\19.Many images.htm" />
     <EmbeddedResource Include="TestSamples\18.Anchors.htm" />
     <EmbeddedResource Include="TestSamples\31.ACID 1.htm" />
     <EmbeddedResource Include="TestSamples\17.Languages.htm" />
-    <EmbeddedResource Include="Samples\08.Tooltip.htm" />
+    <EmbeddedResource Include="Samples\06.Tooltip.htm" />
     <EmbeddedResource Include="TestSamples\16.Borders.htm" />
     <Content Include="Resources\Event16.png" />
     <Content Include="Resources\html.ico" />
     <Content Include="Resources\html32.png" />
-    <EmbeddedResource Include="Samples\09.Using the library.htm" />
-    <EmbeddedResource Include="Samples\01.History.htm" />
-    <EmbeddedResource Include="Samples\06.Embeded video.htm" />
+    <EmbeddedResource Include="Samples\02.Using the code.htm" />
+    <EmbeddedResource Include="Samples\01.Background.htm" />
+    <EmbeddedResource Include="Samples\08.Embeded video.htm" />
     <EmbeddedResource Include="TestSamples\15.MaxWidth.htm" />
     <EmbeddedResource Include="TestSamples\14.Iframes.htm" />
     <EmbeddedResource Include="TestSamples\30.Misc.htm" />
     <EmbeddedResource Include="TestSamples\07.Background Image.htm" />
     <EmbeddedResource Include="TestSamples\06.External Image.htm" />
     <EmbeddedResource Include="TestSamples\11.LineHeight.htm" />
-    <EmbeddedResource Include="Samples\14.HtmlContainer.htm" />
+    <EmbeddedResource Include="Samples\15.HtmlContainer.htm" />
     <EmbeddedResource Include="TestSamples\10.BlockInInline.htm" />
     <EmbeddedResource Include="TestSamples\09.Inline.htm" />
     <EmbeddedResource Include="TestSamples\13.Tables.htm" />
-    <EmbeddedResource Include="TestSamples\12.Text.htm" />
+    <EmbeddedResource Include="TestSamples\12.Fonts.htm" />
     <EmbeddedResource Include="TestSamples\08.White-space.htm" />
     <EmbeddedResource Include="TestSamples\05.Images.htm" />
     <EmbeddedResource Include="TestSamples\04.Blockquotes.htm" />
     <EmbeddedResource Include="TestSamples\03.Paragraphs.htm" />
     <EmbeddedResource Include="TestSamples\01.Header.htm" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="PerfSamples\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

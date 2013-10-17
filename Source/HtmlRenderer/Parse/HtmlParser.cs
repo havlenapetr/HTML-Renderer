@@ -21,55 +21,82 @@ namespace HtmlRenderer.Parse
     /// <summary>
     /// 
     /// </summary>
+#if CF_1_0
+    internal class HtmlParser
+#else
     internal static class HtmlParser
+#endif
     {
+        public static CssBox ParseDocument(string source)
+        {
+            return ParseDocument(source, false);
+        }
+
         /// <summary>
         /// Parses the source html to css boxes tree structure.
         /// </summary>
         /// <param name="source">the html source to parse</param>
-        public static CssBox ParseDocument(string source)
+        public static CssBox ParseDocument(string source, bool profile)
         {
-            var root = CssBox.CreateBlock();
-            var curBox = root;
-
-            int endIdx = 0;
-            int startIdx = 0;
-            while (startIdx >= 0)
+            using (ArgChecker.Profile("HtmlParser.ParseDocument", profile))
             {
-                var tagIdx = source.IndexOf('<', startIdx);
-                if(tagIdx >= 0 && tagIdx < source.Length)
-                {
-                    // add the html text as anon css box to the structure
-                    AddTextBox(source, startIdx, tagIdx, ref curBox);
+                var root = CssBox.CreateBlock();
+                var curBox = root;
 
-                    if (source[tagIdx + 1] == '!')
+                int endIdx = 0;
+                int startIdx = 0;
+                while (startIdx >= 0 && startIdx < source.Length)
+                {
+                    int tagIdx = source.IndexOf('<', startIdx);
+                    if (source[tagIdx + 1] == '=' && source[tagIdx + 2] == '=')
                     {
-                        // skip the html crap elements (<!-- bla -->) (<!crap bla>)
-                        startIdx = source.IndexOf(">", tagIdx + 2);
-                        endIdx = startIdx > 0 ? startIdx + 1 : tagIdx + 2;
+                        tagIdx = source.IndexOf('<', tagIdx + 1) - 1;
                     }
-                    else
+                    if (curBox == null)
                     {
-                        // parse element tag to css box structure
-                        endIdx = ParseHtmlTag(source, tagIdx, ref curBox) + 1;
+                        startIdx++;
+                        continue;
+                    }
+                    if (tagIdx >= 0 && tagIdx < source.Length)
+                    {
+                        using (ArgChecker.Profile("HtmlParser.AddTextBox", profile))
+                        {
+                            // add the html text as anon css box to the structure
+                            AddTextBox(source, startIdx, tagIdx, ref curBox);
+                        }
+
+                        if (source[tagIdx + 1] == '!')
+                        {
+                            // skip the html crap elements (<!-- bla -->) (<!crap bla>)
+                            startIdx = source.IndexOf(">", tagIdx + 2);
+                            endIdx = startIdx > 0 ? startIdx + 1 : tagIdx + 2;
+                        }
+                        else
+                        {
+                            using (ArgChecker.Profile("HtmlParser.ParseHtmlTag", profile))
+                            {
+                                // parse element tag to css box structure
+                                endIdx = ParseHtmlTag(source, tagIdx, ref curBox) + 1;
+                            }
+                        }
+                    }
+                    startIdx = tagIdx > -1 && endIdx > 0 ? endIdx : -1;
+                }
+
+                // handle pices of html without proper structure
+                if (endIdx < source.Length)
+                {
+                    // there is text after the end of last element
+                    var endText = new SubString(source, endIdx, source.Length - endIdx);
+                    if (!endText.IsEmptyOrWhitespace())
+                    {
+                        var abox = CssBox.CreateBox(root);
+                        abox.Text = endText;
                     }
                 }
-                startIdx = tagIdx > -1 && endIdx > 0 ? endIdx : -1;
-            }
 
-            // handle pices of html without proper structure
-            if (endIdx < source.Length)
-            {
-                // there is text after the end of last element
-                var endText = new SubString(source, endIdx, source.Length - endIdx);
-                if(!endText.IsEmptyOrWhitespace())
-                {
-                    var abox = CssBox.CreateBox(root);
-                    abox.Text = endText;
-                }
+                return root;
             }
-
-            return root;
         }
 
 
@@ -103,7 +130,7 @@ namespace HtmlRenderer.Parse
         /// <returns>the end of the parsed part, the new start index</returns>
         private static int ParseHtmlTag(string source, int tagIdx, ref CssBox curBox)
         {
-            var endIdx = source.IndexOf('>', tagIdx + 1);
+            int endIdx = source.IndexOf('>', tagIdx + 1);
             if (endIdx > 0)
             {
                 string tagName;

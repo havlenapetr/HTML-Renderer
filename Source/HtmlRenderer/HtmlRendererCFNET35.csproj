@@ -1,0 +1,152 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{F504B9CC-8DD6-4C84-A04A-789AD29640BD}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>HtmlRendererCFNET35</RootNamespace>
+    <AssemblyName>HtmlRendererCFNET35</AssemblyName>
+    <ProjectTypeGuids>{4D628B5B-2FBC-4AA6-8C16-197242AEB884};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <PlatformFamilyName>WindowsCE</PlatformFamilyName>
+    <PlatformID>E2BECB1F-8C8C-41ba-B736-9BE7D946A398</PlatformID>
+    <OSVersion>5.0</OSVersion>
+    <DeployDirSuffix>HtmlRendererCFNET35</DeployDirSuffix>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <NativePlatformName>Windows CE</NativePlatformName>
+    <FormFactorID>
+    </FormFactorID>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\DebugCFNet35\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;CF_2_0;NETCF</DefineConstants>
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+    <ErrorReport>prompt</ErrorReport>
+    <FileAlignment>512</FileAlignment>
+    <WarningLevel>4</WarningLevel>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\ReleaseCFNet35\</OutputPath>
+    <DefineConstants>TRACE;CF_2_0;NETCF</DefineConstants>
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+    <ErrorReport>prompt</ErrorReport>
+    <FileAlignment>512</FileAlignment>
+    <WarningLevel>4</WarningLevel>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.XML" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Compatibility\FillMode.cs" />
+    <Compile Include="Compatibility\GraphicsPath.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Compatibility\PathData.cs" />
+    <Compile Include="Compatibility\PathPointType.cs" />
+    <Compile Include="Compatibility\PointF.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HtmlPanelEx.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Properties\Resources.Designer.cs" />
+    <Compile Include="WinCEGraphics.cs" />
+    <Compile Include="CssData.cs" />
+    <Compile Include="Dom\CssBox.cs" />
+    <Compile Include="Dom\CssBoxFrame.cs" />
+    <Compile Include="Dom\CssBoxHr.cs" />
+    <Compile Include="Dom\CssBoxImage.cs" />
+    <Compile Include="Dom\CssBoxProperties.cs" />
+    <Compile Include="Dom\CssLayoutEngine.cs" />
+    <Compile Include="Dom\CssLayoutEngineTable.cs" />
+    <Compile Include="Dom\CssLength.cs" />
+    <Compile Include="Dom\CssLineBox.cs" />
+    <Compile Include="Dom\CssRect.cs" />
+    <Compile Include="Dom\CssRectImage.cs" />
+    <Compile Include="Dom\CssRectWord.cs" />
+    <Compile Include="Dom\CssSpacingBox.cs" />
+    <Compile Include="Dom\HtmlTag.cs" />
+    <Compile Include="Entities\Border.cs" />
+    <Compile Include="Entities\CssBlock.cs" />
+    <Compile Include="Entities\CssBlockSelectorItem.cs" />
+    <Compile Include="Entities\CssConstants.cs" />
+    <Compile Include="Entities\CssDefaults.cs" />
+    <Compile Include="Entities\CssUnit.cs" />
+    <Compile Include="Entities\HtmlConstants.cs" />
+    <Compile Include="Entities\HtmlGenerationStyle.cs" />
+    <Compile Include="Entities\HtmlImageLoadEventArgs.cs" />
+    <Compile Include="Entities\HtmlLinkClickedEventArgs.cs" />
+    <Compile Include="Entities\HtmlRefreshEventArgs.cs" />
+    <Compile Include="Entities\HtmlRenderErrorEventArgs.cs" />
+    <Compile Include="Entities\HtmlRenderErrorType.cs" />
+    <Compile Include="Entities\HtmlScrollEventArgs.cs" />
+    <Compile Include="Entities\HtmlStylesheetLoadEventArgs.cs" />
+    <Compile Include="Entities\SubString.cs" />
+    <Compile Include="Handlers\BackgroundImageDrawHandler.cs" />
+    <Compile Include="Handlers\BordersDrawHandler.cs" />
+    <Compile Include="Handlers\ImageLoadHandler.cs" />
+    <Compile Include="Handlers\SelectionHandler.cs" />
+    <Compile Include="HtmlContainer.cs" />
+    <Compile Include="HtmlPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="HtmlRender.cs" />
+    <Compile Include="IGraphics.cs" />
+    <Compile Include="Parse\CssParser.cs" />
+    <Compile Include="Parse\CssValueParser.cs" />
+    <Compile Include="Parse\DomParser.cs" />
+    <Compile Include="Parse\HtmlParser.cs" />
+    <Compile Include="Parse\RegexParserHelper.cs" />
+    <Compile Include="Parse\RegexParserUtils.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\ArgChecker.cs" />
+    <Compile Include="Utils\CommonUtils.cs" />
+    <Compile Include="Utils\CssUtils.cs" />
+    <Compile Include="Utils\DomUtils.cs" />
+    <Compile Include="Utils\FontsUtils.cs" />
+    <Compile Include="Utils\HtmlClipboardUtils.cs" />
+    <Compile Include="Utils\HtmlUtils.cs" />
+    <Compile Include="Utils\RenderUtils.cs" />
+    <Compile Include="Utils\StylesheetLoadHelper.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Images\ErrorImage.png" />
+    <Content Include="Images\LoadImage.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}">
+        <HostingProcess disable="1" />
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

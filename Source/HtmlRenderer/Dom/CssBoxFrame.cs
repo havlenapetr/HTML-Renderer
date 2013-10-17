@@ -55,10 +55,12 @@ namespace HtmlRenderer.Dom
         /// </summary>
         private string _videoLinkUrl;
 
+#if PC
         /// <summary>
         /// handler used for image loading by source
         /// </summary>
         private ImageLoadHandler _imageLoadHandler;
+#endif
 
         /// <summary>
         /// is image load is finished, used to know if no image is found
@@ -85,12 +87,16 @@ namespace HtmlRenderer.Dom
                 if(uri.Host.IndexOf("youtube.com",StringComparison.InvariantCultureIgnoreCase) > -1)
                 {
                     _isVideo = true;
+#if PC
                     LoadYoutubeDataAsync(uri);
+#endif
                 }
                 else if (uri.Host.IndexOf("vimeo.com",StringComparison.InvariantCultureIgnoreCase) > -1)
                 {
                     _isVideo = true;
-                    LoadVimeoDataAsync(uri);                    
+#if PC
+                    LoadVimeoDataAsync(uri);
+#endif
                 }
             }
 
@@ -129,14 +135,17 @@ namespace HtmlRenderer.Dom
         /// </summary>
         public override void Dispose()
         {
+#if PC
             if(_imageLoadHandler != null)
                 _imageLoadHandler.Dispose();
+#endif
             base.Dispose();
         }
 
 
         #region Private methods
 
+#if PC
         /// <summary>
         /// Load YouTube video data (title, image, link) by calling YouTube API.
         /// </summary>
@@ -390,17 +399,18 @@ namespace HtmlRenderer.Dom
             catch
             {}
         }
+#endif
 
         /// <summary>
         /// Paints the fragment
         /// </summary>
         /// <param name="g">the device to draw to</param>
-        protected override void PaintImp(IGraphics g)
+        protected override void PaintImp(IGraphics g, bool profile)
         {
             var rects = CommonUtils.GetFirstValueOrDefault(Rectangles);
 
-            PointF offset = HtmlContainer != null ? HtmlContainer.ScrollOffset : PointF.Empty;
-            rects.Offset(offset);
+            PointF offset = HtmlContainer != null ? HtmlContainer.ScrollOffset : new PointF();
+            rects = RenderUtils.RectOffset(rects, offset);
 
             var prevClip = RenderUtils.ClipGraphicsByOverflow(g, this);
 
@@ -410,16 +420,23 @@ namespace HtmlRenderer.Dom
 
             var word = Words[0];
             var tmpRect = word.Rectangle;
-            tmpRect.Offset(offset);
+            tmpRect = RenderUtils.RectOffset(tmpRect, offset);
             tmpRect.Height -= ActualBorderTopWidth + ActualBorderBottomWidth + ActualPaddingTop + ActualPaddingBottom;
             tmpRect.Y += ActualBorderTopWidth + ActualPaddingTop;
             var rect = Rectangle.Round(tmpRect);
 
-            DrawImage(g, offset, rect);
-
-            DrawTitle(g, rect);
-
-            DrawPlay(g, rect);
+            using (ArgChecker.Profile("CssBoxFrame.DrawImage", profile))
+            {
+                DrawImage(g, offset, rect);
+            }
+            using (ArgChecker.Profile("CssBoxFrame.DrawTitle", profile))
+            {
+                DrawTitle(g, rect);
+            }
+            using (ArgChecker.Profile("CssBoxFrame.DrawPlay", profile))
+            {
+                DrawPlay(g, rect);
+            }
             
             RenderUtils.ReturnClip(g, prevClip);
         }
@@ -459,15 +476,24 @@ namespace HtmlRenderer.Dom
             if (_videoTitle != null && _imageWord.Width > 40 && _imageWord.Height > 40)
             {
                 var font = FontsUtils.GetCachedFont("Arial", 9f, System.Drawing.FontStyle.Regular);
+#if PC
                 g.FillRectangle(RenderUtils.GetSolidBrush(System.Drawing.Color.FromArgb(160, 0, 0, 0)), rect.Left, rect.Top, rect.Width, FontsUtils.GetFontHeight(font) + 7);
+#else
+                g.FillRectangle(RenderUtils.GetSolidBrush(System.Drawing.Color.Black), rect.Left, rect.Top, rect.Width, FontsUtils.GetFontHeight(font) + 7);
+#endif
 
+#if PC
                 using (var sf = new StringFormat(StringFormat.GenericTypographic))
                 {
                     sf.FormatFlags = StringFormatFlags.NoWrap;
                     sf.Trimming = StringTrimming.EllipsisCharacter;
                     var titleRect = new RectangleF(rect.Left + 3, rect.Top + 3, rect.Width - 6, rect.Height - 6);
-                    g.DrawString(_videoTitle, font, System.Drawing.Color.WhiteSmoke, titleRect.Location, SizeF.Empty);
+                    g.DrawString(_videoTitle, font, System.Drawing.Color.WhiteSmoke, new PointF(titleRect.X, titleRect.Y));
                 }
+#else
+                var titleRect = new RectangleF(rect.Left + 3, rect.Top + 3, rect.Width - 6, rect.Height - 6);
+                g.DrawString(_videoTitle, font, System.Drawing.Color.WhiteSmoke, new PointF(titleRect.X, titleRect.Y));
+#endif
             }
         }
 
@@ -478,13 +504,19 @@ namespace HtmlRenderer.Dom
         {
             if (_isVideo && _imageWord.Width > 70 && _imageWord.Height > 50)
             {
+#if PC
                 var smooth = g.SmoothingMode;
                 g.SmoothingMode = SmoothingMode.AntiAlias;
+#endif
 
                 var size = new Size(60, 40);
                 var left = rect.Left + (rect.Width - size.Width)/2;
                 var top = rect.Top + (rect.Height - size.Height)/2;
+#if PC
                 g.FillRectangle(RenderUtils.GetSolidBrush(System.Drawing.Color.FromArgb(160, 0, 0, 0)), left, top, size.Width, size.Height);
+#else
+                g.FillRectangle(RenderUtils.GetSolidBrush(System.Drawing.Color.Black), left, top, size.Width, size.Height);
+#endif
 
                 using (var path = new GraphicsPath())
                 {
@@ -494,7 +526,9 @@ namespace HtmlRenderer.Dom
                     g.FillPath(Brushes.White, path);
                 }
 
+#if PC
                 g.SmoothingMode = smooth;
+#endif
             }
         }
 

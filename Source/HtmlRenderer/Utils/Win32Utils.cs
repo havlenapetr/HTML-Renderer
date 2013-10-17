@@ -12,6 +12,7 @@
 
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 
 namespace HtmlRenderer.Utils
@@ -21,53 +22,6 @@ namespace HtmlRenderer.Utils
     /// </summary>
     internal static class Win32Utils
     {
-        /// <summary>
-        /// Const for BitBlt copy
-        /// </summary>
-        public const int BitBltCopy = 0x00CC0020;
-
-        /// <summary>
-        /// Create a compatible memory HDC from the given HDC.<br/>
-        /// The memory HDC can be rendered into without effecting the original HDC.<br/>
-        /// The returned memory HDC and <paramref name="dib"/> must be released using <see cref="ReleaseMemoryHdc"/>.
-        /// </summary>
-        /// <param name="hdc">the HDC to create memory HDC from</param>
-        /// <param name="width">the width of the memory HDC to create</param>
-        /// <param name="height">the height of the memory HDC to create</param>
-        /// <param name="dib">returns used bitmap memory section that must be released when done with memory HDC</param>
-        /// <returns>memory HDC</returns>
-        public static IntPtr CreateMemoryHdc(IntPtr hdc, int width, int height, out IntPtr dib)
-        {
-            // Create a memory DC so we can work off-screen
-            IntPtr memoryHdc = CreateCompatibleDC(hdc);
-            SetBkMode(memoryHdc, 1);
-
-            // Create a device-independent bitmap and select it into our DC
-            var info = new BitMapInfo();
-            info.biSize = Marshal.SizeOf(info);
-            info.biWidth = width;
-            info.biHeight = -height;
-            info.biPlanes = 1;
-            info.biBitCount = 32;
-            info.biCompression = 0; // BI_RGB
-            IntPtr ppvBits;
-            dib = CreateDIBSection(hdc, ref info, 0, out ppvBits, IntPtr.Zero, 0);
-            SelectObject(memoryHdc, dib);
-
-            return memoryHdc;
-        }
-
-        /// <summary>
-        /// Release the given memory HDC and dib section created from <see cref="CreateMemoryHdc"/>.
-        /// </summary>
-        /// <param name="memoryHdc">Memory HDC to release</param>
-        /// <param name="dib">bitmap section to release</param>
-        public static void ReleaseMemoryHdc(IntPtr memoryHdc, IntPtr dib)
-        {
-            DeleteObject(dib);
-            DeleteDC(memoryHdc);
-        }
-
         [DllImport("user32.dll")]
         public static extern bool IsWindowVisible(IntPtr hWnd);
 
@@ -132,58 +86,5 @@ namespace HtmlRenderer.Utils
 
         [DllImport("gdi32.dll")]
         public static extern bool DeleteObject(IntPtr hObject);
-
-        [DllImport("gdi32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool BitBlt(IntPtr hdc, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, long dwRop);
-
-        [DllImport("gdi32.dll", EntryPoint = "GdiAlphaBlend")]
-        public static extern bool AlphaBlend(IntPtr hdcDest, int nXOriginDest, int nYOriginDest, int nWidthDest, int nHeightDest, IntPtr hdcSrc, int nXOriginSrc, int nYOriginSrc, int nWidthSrc, int nHeightSrc, BlendFunction blendFunction);
-
-        [DllImport("gdi32.dll", ExactSpelling = true, SetLastError = true)]
-        public static extern bool DeleteDC(IntPtr hdc);
-
-        [DllImport("gdi32.dll", ExactSpelling = true, SetLastError = true)]
-        public static extern IntPtr CreateCompatibleDC(IntPtr hdc);
-
-        [DllImport("gdi32.dll")]
-        public static extern IntPtr CreateDIBSection(IntPtr hdc, [In] ref BitMapInfo pbmi, uint iUsage, out IntPtr ppvBits, IntPtr hSection, uint dwOffset);
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct BlendFunction
-    {
-        public byte BlendOp;
-        public byte BlendFlags;
-        public byte SourceConstantAlpha;
-        public byte AlphaFormat;
-
-        public BlendFunction(byte alpha)
-        {
-            BlendOp = 0;
-            BlendFlags = 0;
-            AlphaFormat = 0;
-            SourceConstantAlpha = alpha;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct BitMapInfo
-    {
-        public int biSize;
-        public int biWidth;
-        public int biHeight;
-        public short biPlanes;
-        public short biBitCount;
-        public int biCompression;
-        public int biSizeImage;
-        public int biXPelsPerMeter;
-        public int biYPelsPerMeter;
-        public int biClrUsed;
-        public int biClrImportant;
-        public byte bmiColors_rgbBlue;
-        public byte bmiColors_rgbGreen;
-        public byte bmiColors_rgbRed;
-        public byte bmiColors_rgbReserved;
     }
 }

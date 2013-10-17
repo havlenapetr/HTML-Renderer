@@ -40,7 +40,7 @@ namespace HtmlRenderer.Entities
         /// <param name="type">the type of error to report</param>
         /// <param name="message">the error message</param>
         /// <param name="exception">optional: the exception that occured</param>
-        public HtmlRenderErrorEventArgs(HtmlRenderErrorType type, string message, Exception exception = null)
+        public HtmlRenderErrorEventArgs(HtmlRenderErrorType type, string message, Exception exception)
         {
             _type = type;
             _message = message;

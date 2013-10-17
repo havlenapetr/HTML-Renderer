@@ -22,7 +22,11 @@ namespace HtmlRenderer.Parse
     /// <summary>
     /// Parser to parse CSS stylesheet source string into CSS objects.
     /// </summary>
+#if CF_1_0
+    internal class CssParser
+#else
     internal static class CssParser
+#endif
     {
         #region Fields and Consts
 
@@ -87,7 +91,7 @@ namespace HtmlRenderer.Parse
         {
             // Convert everything to lower-case so not to handle case in code
             blockSource = blockSource.ToLower();
-            
+
             return ParseCssBlockImp(className, blockSource);
         }
 
@@ -118,7 +122,7 @@ namespace HtmlRenderer.Parse
             while (startIdx > -1 && startIdx < stylesheet.Length)
             {
                 startIdx = stylesheet.IndexOf("/*", startIdx);
-                if(startIdx > -1)
+                if (startIdx > -1)
                 {
                     if (sb == null)
                         sb = new StringBuilder(stylesheet.Length);
@@ -130,12 +134,12 @@ namespace HtmlRenderer.Parse
 
                     prevIdx = startIdx = endIdx + 2;
                 }
-                else if(sb != null)
+                else if (sb != null)
                 {
                     sb.Append(stylesheet.Substring(prevIdx));
                 }
             }
-            
+
             return sb != null ? sb.ToString() : stylesheet;
         }
 
@@ -233,6 +237,10 @@ namespace HtmlRenderer.Parse
             }
         }
 
+        private static void FeedStyleBlock(CssData cssData, string block)
+        {
+            FeedStyleBlock(cssData, block, "all");
+        }
         /// <summary>
         /// Feeds the style with a block about the specific media.<br/>
         /// When no media is specified, "all" will be used.
@@ -240,7 +248,7 @@ namespace HtmlRenderer.Parse
         /// <param name="cssData"> </param>
         /// <param name="block">the CSS block to handle</param>
         /// <param name="media">optional: the media (default - all)</param>
-        private static void FeedStyleBlock(CssData cssData, string block, string media = "all")
+        private static void FeedStyleBlock(CssData cssData, string block, string media)
         {
             int startIdx = block.IndexOf("{", StringComparison.Ordinal);
             int endIdx = startIdx > -1 ? block.IndexOf("}", startIdx) : -1;
@@ -280,14 +288,14 @@ namespace HtmlRenderer.Parse
                 className = className.Substring(0, colonIdx).Trim();
             }
 
-            if (!string.IsNullOrEmpty(className) && (psedoClass == null || psedoClass == "link" || psedoClass == "hover"))
+            if (!string.IsNullOrEmpty(className) && (psedoClass == null || psedoClass == "link"))
             {
                 string firstClass;
                 var selectors = ParseCssBlockSelector(className, out firstClass);
 
                 var properties = ParseCssBlockProperties(blockSource);
 
-                return new CssBlock(firstClass, properties, selectors, psedoClass == "hover");
+                return new CssBlock(firstClass, properties, selectors);
             }
 
             return null;
@@ -400,7 +408,7 @@ namespace HtmlRenderer.Parse
             }
             else if (propName == "color" || propName == "backgroundcolor" || propName == "bordertopcolor" || propName == "borderbottomcolor" || propName == "borderleftcolor" || propName == "borderrightcolor")
             {
-                 ParseColorProperty(propName, propValue, properties);
+                ParseColorProperty(propName, propValue, properties);
             }
             else if (propName == "font")
             {
@@ -468,7 +476,7 @@ namespace HtmlRenderer.Parse
         /// <param name="properties">the properties collection to add to</param>
         private static void ParseLengthProperty(string propName, string propValue, Dictionary<string, string> properties)
         {
-            if (CssValueParser.IsValidLength(propValue) || propValue.Equals(CssConstants.Auto,StringComparison.OrdinalIgnoreCase))
+            if (CssValueParser.IsValidLength(propValue))
             {
                 properties[propName] = propValue;
             }
@@ -515,7 +523,7 @@ namespace HtmlRenderer.Parse
                 string fontSize = mustBe;
                 string lineHeight = string.Empty;
 
-                if (mustBe.Contains("/") && mustBe.Length > mustBe.IndexOf("/", StringComparison.Ordinal) + 1)
+                if (CommonUtils.StrContains(mustBe, "/") && mustBe.Length > mustBe.IndexOf("/", StringComparison.Ordinal) + 1)
                 {
                     int slashPos = mustBe.IndexOf("/", StringComparison.Ordinal);
                     fontSize = mustBe.Substring(0, slashPos);
@@ -544,11 +552,11 @@ namespace HtmlRenderer.Parse
         private static string ParseBackgroundImageProperty(string propValue)
         {
             int startIdx = propValue.IndexOf("url(", StringComparison.Ordinal);
-            if(startIdx > -1)
+            if (startIdx > -1)
             {
                 startIdx += 4;
                 var endIdx = propValue.IndexOf(')', startIdx);
-                if(endIdx > -1)
+                if (endIdx > -1)
                 {
                     endIdx -= 1;
                     while (startIdx < endIdx && (char.IsWhiteSpace(propValue[startIdx]) || propValue[startIdx] == '\''))
@@ -572,12 +580,12 @@ namespace HtmlRenderer.Parse
         private static string ParseFontFamilyProperty(string propValue)
         {
             int start = 0;
-            while(start > -1 && start < propValue.Length)
+            while (start > -1 && start < propValue.Length)
             {
                 while (char.IsWhiteSpace(propValue[start]) || propValue[start] == ',' || propValue[start] == '\'' || propValue[start] == '"')
                     start++;
                 var end = propValue.IndexOf(',', start);
-                if(end < 0)
+                if (end < 0)
                     end = propValue.Length;
                 var adjEnd = end - 1;
                 while (char.IsWhiteSpace(propValue[adjEnd]) || propValue[adjEnd] == '\'' || propValue[adjEnd] == '"')
@@ -592,7 +600,7 @@ namespace HtmlRenderer.Parse
 
                 start = end;
             }
-            
+
             return CssConstants.Inherit;
         }
 
@@ -736,13 +744,17 @@ namespace HtmlRenderer.Parse
             }
         }
 
+        private static string[] SplitValues(string value)
+        {
+            return SplitValues(value, ' ');
+        }
         /// <summary>
         /// Split the value by the specified separator; e.g. Useful in values like 'padding:5 4 3 inherit'
         /// </summary>
         /// <param name="value">Value to be splitted</param>
         /// <param name="separator"> </param>
         /// <returns>Splitted and trimmed values</returns>
-        private static string[] SplitValues(string value, char separator = ' ')
+        private static string[] SplitValues(string value, char separator)
         {
             //TODO: CRITICAL! Don't split values on parenthesis (like rgb(0, 0, 0)) or quotes ("strings")
 
